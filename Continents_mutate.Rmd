@@ -9,10 +9,26 @@ output: html_notebook
 library(tidyverse)
 med <- read.csv("../Data/Med_cyano_list_20191003.csv")
 
+colnames(med)[1] <- "A/A"
+med
+
+a <- med %>%  select("A/A", Country) %>% 
+  filter(Country == "Morocco") %>% 
+  arrange(Country)
+a
+
+##Insert new column Continent
+
+med_conts <- med %>% 
+  mutate(continent = case_when(Country %in% c("Greece", "Italy", "Spain", "France", "Albania", "Montenegro", "Slovenia", "Portugal", "Bulgaria", "Croatia") ~ "Europe",
+                               Country %in% c("Egypt", "Morocco", "Tunisia", "Libya", "Algeria", "Israel","Lebanon") ~ "Africa",Country == "Turkey" ~ "Asia"))
+
+
 refe_per_country <- med_conts %>% select(Year, Title, Country, continent) %>% 
   group_by(Country, continent) %>% 
   summarize(N = n_distinct(Title))
 refe_per_country
+
 
 
 refe_per_country_bar <- ggplot(refe_per_country, aes(x=reorder(Country, -N), y = N, width = .7, fill = continent)) + geom_bar(stat = "identity", position = "identity") + theme_classic()  + theme(axis.line = element_line(size = 0.2, 
@@ -52,6 +68,7 @@ refe_per_country_year_bar <- ggplot(refe_per_country, aes(x=Year, y = N, width =
   xlab("Country") + ylab("Number of references") + facet_wrap(~ Country)
 refe_per_country_year_bar
 ggsave("refe_per_country_year_bar.png")
+
 ```
 
 # Mutate Continents
