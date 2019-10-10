@@ -1,0 +1,294 @@
+---
+title: "Beta_diversity"
+output: html_notebook
+---
+
+
+
+# Library path manually
+```{r}
+mypaths <- .libPaths()
+mypaths <- c(mypaths, "C:/Program Files/R/R-3.6.1/library")
+.libPaths(mypaths)
+```
+
+
+```{r}
+library(tidyverse)
+library(betapart)
+```
+
+```{r}
+med <- read.csv("../Data/Med_cyano_list_20191003.csv")
+med
+```
+
+```{r}
+str(med)
+length(med$Genus)
+glimpse(med)
+```
+
+#Split countries and get the unique taxa and Isolationsources for each of them
+
+```{r}
+s <- split(med, med$Country)
+s
+
+couspe_unique <- sapply
+
+couiso_unique <- sapply(s, function(x){
+  unique(x["Isolationsource"])
+})
+couiso_unique
+
+```
+
+# Select only habitat Pond and spread function
+## Get beta diversity
+
+```{r}
+pondbeta <- med %>%  select(Currentname, Isolationsource) %>% 
+  filter_all(any_vars(str_detect(., pattern = "Pond"))) %>% 
+  group_by(Isolationsource, Currentname) %>% 
+  summarise(N = n()) %>% 
+  spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) 
+pondbeta
+summary(pondbeta)
+
+
+#beta diversity
+library(betapart)
+pondbetapart <- pondbeta
+pondbetapart[pondbetapart >= 1] <- 1
+pondbetapart <- betapart.core(pondbetapart[, -1])
+pondbetapart
+
+
+pondbetapart_pair_jac <- beta.pair(pondbetapart, index.family = "jac")
+pondbetapart_pair_jac
+
+# Computing multiple-site dissimilarities, with Jaccard and Sorensen indexes
+pondbetapart_multi_jac <- beta.multi(pondbetapart, index.family = "jac")
+pondbetapart_multi_jac
+
+pondbetapart_multi_sor <- beta.multi(pondbetapart, index.family = "sor")
+pondbetapart_multi_sor
+
+
+```
+
+# Select only habitat Lake and spread function
+## Get beta diversity
+
+```{r}
+
+lakebeta <- med %>%  select(Currentname, Isolationsource) %>% 
+  filter_all(any_vars(str_detect(., pattern = "Lake"))) %>% 
+  group_by(Isolationsource, Currentname) %>% 
+  summarise(N = n()) %>% 
+  spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) 
+#lakebeta <- lakebeta[, -2]
+lakebeta
+summary(lakebeta)
+
+
+#beta diversity
+library(betapart)
+  
+lakebetapart <- lakebeta
+lakebetapart[lakebetapart >= 1] <- 1
+lakebetapart <- betapart.core(lakebetapart[, -1])
+lakebetapart
+
+# Computing multiple-site dissimilarities, with Jaccard and Sorensen indexes
+lakebetapart_multi_jac <- beta.multi(lakebetapart, index.family = "jac")
+lakebetapart_multi_jac
+
+lakebetapart_multi_sor <- beta.multi(lakebetapart, index.family = "sor")
+lakebetapart_multi_sor
+
+```
+
+# Select only habitat Reservoir and spread function
+## Get beta diversity
+
+```{r}
+resebeta <- med %>%  select(Currentname, Isolationsource) %>% 
+  filter_all(any_vars(str_detect(., pattern = "Reservoir"))) %>% 
+  group_by(Isolationsource, Currentname) %>% 
+  summarise(N = n()) %>% 
+  spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) 
+#lakebeta <- lakebeta[, -2]
+resebeta
+summary(resebeta)
+str(resebeta)
+
+
+#beta diversity
+library(betapart)
+  
+resebetapart <- resebeta
+#resebetapart[resebetapart >= 1] <- 1
+resebetapart <- betapart.core(resebetapart[, -1])
+resebetapart
+```
+
+```{r}
+rivbeta <- med %>%  select(Currentname, Isolationsource) %>% 
+  filter_all(any_vars(str_detect(., pattern = "River"))) %>% 
+  group_by(Isolationsource, Currentname) %>% 
+  summarise(N = n()) %>% 
+  spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) 
+#lakebeta <- lakebeta[, -2]
+rivbeta
+
+#beta diversity
+library(betapart)
+  
+rivbetapart <- rivbeta
+#resebetapart[resebetapart >= 1] <- 1
+rivbetapart <- betapart.core(rivbetapart[, -1])
+rivbetapart
+```
+
+```{r}
+streambeta <- med %>%  select(Currentname, Isolationsource) %>% 
+  filter_all(any_vars(str_detect(., pattern = "Stream"))) %>% 
+  group_by(Isolationsource, Currentname) %>% 
+  summarise(N = n()) %>% 
+  spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) 
+#lakebeta <- lakebeta[, -2]
+streambeta
+
+
+#beta diversity
+library(betapart)
+  
+streambetapart <- streambeta
+streambetapart[streambetapart >= 1] <- 1
+streambetapart <- betapart.core(streambetapart[, -1])
+streambetapart
+
+# Computing multiple-site dissimilarities, with Jaccard and Sorensen indexes
+streambetapart_multi_jac <- beta.multi(streambetapart, index.family = "jac")
+streambetapart_multi_jac
+
+streambetapart_multi_sor <- beta.multi(streambetapart, index.family = "sor")
+streambetapart_multi_sor
+```
+
+# Alpha diversity of habitat pond
+
+```{r}
+library(dplyr)
+library(tidyverse)
+
+pondspr<- med %>%  select(Currentname, Isolationsource) %>% 
+  filter_all(any_vars(str_detect(., pattern = "Pond"))) %>% 
+  group_by(Isolationsource, Currentname) %>% 
+  summarise(N = n()) %>% 
+  spread(Isolationsource, N, fill = 0, convert = FALSE, sep = NULL)
+pondspr
+
+apply(pondspr[, -1] > 0, 2, sum)
+```
+
+# Alpha diversity of habitat Lake
+
+```{r}
+lakespr<- med %>%  select(Currentname, Isolationsource) %>% 
+  filter_all(any_vars(str_detect(., pattern = "Lake"))) %>% 
+  group_by(Isolationsource, Currentname) %>% 
+  summarise(N = n()) %>% 
+  spread(Isolationsource, N, fill = 0, convert = FALSE, sep = NULL)
+lakespr
+
+apply(lakespr[, -1] > 0, 2, sum)
+```
+
+# Menhinick's index is simply the number of species (n) divided by the square-root of the total number of individuals (N).   D=n/√N
+
+
+
+```{r}
+n <- apply(lakespr[, -1]>0, 2, sum)
+N <- apply(lakespr[, -1]>0, 2, sum)
+Mehi <- n/sqrt(N)
+Mehi
+```
+
+# Menhinick's index is simply the number of species (n) divided by the square-root of the total number of individuals (N).   D=n/√N
+
+```{r}
+n <- apply(pondspr[, -1]>0, 2, sum)
+N <- apply(pondspr[, -1]>0, 2, sum)
+Mehi <- n/sqrt(N)
+Mehi
+```
+
+#Margalef's index is the number of species (n) minus 1 divided by the natural logarithm of the total number of individuals (N). D= (n−1)log(N)
+
+```{r}
+n <- apply(pondspr[, -1]>0, 2, sum)
+N <- apply(pondspr[,-1]>0, 2, sum)
+Margal <- (n-1)/log(N)
+Margal
+```
+
+
+```{r}
+lake_species <- med %>% 
+  select(Currentname, Isolationsource) %>% 
+  filter_all(any_vars(str_detect(., pattern = "Lake"))) %>% 
+  group_by(Isolationsource) %>% 
+  summarise(N = n()) %>% 
+  arrange(desc(N))
+lake_species <- head(lake_species, 10) %>%
+  spread(Currentname, N, full = 0, convert = FALSE, sep = NULL)
+
+```
+
+# Compute total dissimilarity across all n sites, Sorensen and Jaccard indexes implementation of betapart package
+
+```{r}
+sore <- med %>% select(Isolationsource, Currentname, Order) %>% 
+  filter(Order != " ") %>% 
+  group_by(Isolationsource, Currentname) %>% 
+  summarize(N = n()) %>% 
+  spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) 
+
+sore_pa <- sore
+sore_pa[sore_pa >=1] <- 1
+sore_pa
+s <-beta.multi(sore_pa[,-1],index.family = "sorensen")
+s
+
+j <- beta.multi(sore_pa[,-1], index.family = "jaccard")
+j
+```
+
+```{r}
+sore <- med %>% select(Isolationsource, Currentname, Order) %>% 
+  filter(Order != " ") %>% 
+  group_by(Isolationsource, Currentname) %>% 
+  summarize(N = n()) %>% 
+  spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) 
+
+
+sore_pair <- sore
+sore_pair[sore_pair >=1] <- 1
+sore_pair
+
+beta.pair(sore_pair[,-1], index.family = "sorensen")
+beta.pair(sore_pair[, -1], index.family = "jaccard")
+
+beta.sample(sore_pair[,-1], index.family = "sorensen", samples = 10)
+```
+
+```{r}
+require(dismo)
+```
+
+
+
