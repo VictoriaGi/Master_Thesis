@@ -1,0 +1,77 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+install.packages("ggmap")
+library(ggmap)
+library(tidyverse)
+
+# Import dataset
+# setwd("C:/Users/hp/Desktop/Edit Medit/R_scripts")
+med <- read.csv("../Data/Med_cyano_list_20191003.csv")
+med
+
+# Get unique countries / species
+countries <- unique(med$Country)
+species <- unique(med$Currentname)
+x<- as.data.frame(species)
+
+# Code below was used to visualize the for loop which follows
+# greece <- subset(cyanolab, cyanolab$Country == "Greece")
+# greece_num <- length(unique(greece$Species))    
+
+# Get species per country
+country <- list()
+country_num <- list()
+for (i in countries){
+  country[[i]] <- subset(med, med$Country == i)
+  country_num[[i]] <- length(unique(country[[i]]$Currentname))
+}
+rm(country)
+
+species_per_country <- unlist(country_num)
+species_per_country <- as.data.frame(species_per_country)
+rm(country_num)
+
+# country_num2 <- as.data.frame(country_num)
+# country_num2 <- t(country_num2)
+# country_num2 <- as.data.frame(country_num2)
+
+# Place coordinates for each country
+species_per_country$country <- countries
+species_per_country <- species_per_country[order(species_per_country$country),]
+species_per_country$lon <- 
+  c(20, 3, 23, 16, 31, 2, 24, 35, 12, 35, -9, 19, -7, -9, 14, -4, 10, 33)
+species_per_country$lat <- 
+  c(41, 37, 43, 46, 30, 49, 38, 32, 42, 34, 39, 42, 34, 39, 46, 40, 37, 40)
+
+sites <- c(left =-15, bottom=23, right=40, top=50)
+map <- get_stamenmap(sites, zoom = 5, maptype = "toner-lite")
+samp_sites <- ggmap(map)
+samp_sites
+species_per_country
+bubble_plot <- samp_sites +
+  geom_point(data = species_per_country, 
+             aes(x=lon, y=lat, size = species_per_country, colour = country))
+
+
+bubble_plot + theme(plot.subtitle = element_text(vjust = 1), 
+                    plot.caption = element_text(vjust = 1), 
+                    panel.grid.minor = element_line(size = 2.5), 
+                    plot.title = element_text(family = "serif")) +
+  labs(title = "Species per country", size = "N of species") +
+  theme(plot.caption = element_text(family = "serif")) 
+  bubble_plot+labs(caption = "Number of taxa collected by CYANOLAB AUTH")
+bubble_plot
+ggsave("bubble_plot.png", dpi=300)
+```
+
+```{r}
+
+```
+
+
+
