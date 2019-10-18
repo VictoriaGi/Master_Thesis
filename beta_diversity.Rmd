@@ -1,8 +1,9 @@
 ---
 title: "Beta_diversity"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
-
 
 
 # Library path manually
@@ -23,24 +24,30 @@ med <- read.csv("../Data/Med_cyano_list_20191003.csv")
 med
 ```
 
+# Change the name of column 1
+
+```{r}
+colnames(med)[1] <- "A/A"
+med
+```
+
 ```{r}
 str(med)
 length(med$Genus)
 glimpse(med)
+length(unique(med$Currentname))
 ```
 
 #Split countries and get the unique taxa and Isolationsources for each of them
 
 ```{r}
-s <- split(med, med$Country)
+s <- split(med, med$Habitat_type)
 s
 
-couspe_unique <- sapply
-
 couiso_unique <- sapply(s, function(x){
-  unique(x["Isolationsource"])
+  unique(x["Currentname"])
 })
-couiso_unique
+couiso_unique <- couiso_unique
 
 ```
 
@@ -78,11 +85,10 @@ pondbetapart_multi_sor
 
 ```
 
-# Select only habitat Lake and spread function
+# Select only habitat Lake and use the spread function
 ## Get beta diversity
 
 ```{r}
-
 lakebeta <- med %>%  select(Currentname, Isolationsource) %>% 
   filter_all(any_vars(str_detect(., pattern = "Lake"))) %>% 
   group_by(Isolationsource, Currentname) %>% 
@@ -129,10 +135,12 @@ str(resebeta)
 library(betapart)
   
 resebetapart <- resebeta
-#resebetapart[resebetapart >= 1] <- 1
+resebetapart[resebetapart >= 1] <- 1
 resebetapart <- betapart.core(resebetapart[, -1])
 resebetapart
 ```
+
+
 
 ```{r}
 rivbeta <- med %>%  select(Currentname, Isolationsource) %>% 
