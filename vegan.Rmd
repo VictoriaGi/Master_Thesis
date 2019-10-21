@@ -1,0 +1,65 @@
+---
+title: "vegan_package"
+author: "Vica"
+date: "10/21/2019"
+output: html_document
+---
+
+
+```{r}
+library(vegan)
+library(tidyverse)
+```
+```{r}
+data(dune)
+data(dune.taxon)
+taxdis <- taxa2dist(dune.taxon, varstep = TRUE)
+taxdis
+plot(hclust(taxdis), hang = -1)
+mod <- taxondive(dune, taxdis)
+mod
+summary(mod)
+plot(mod)
+```
+
+
+```{r}
+med <- read.csv("../Data/Med_cyano_list_20191003.csv", row.names = NULL)
+colnames(med)[1] <- "A/A"
+```
+
+
+```{r}
+med.taxon <- med %>% 
+  filter(Family != "") %>% 
+  distinct(Currentname, Genustotal, Family, Order, Class)
+class(med.taxon)
+
+med.taxon <- column_to_rownames(med.taxon, "Currentname")
+
+
+
+med.taxon <- droplevels(med.taxon)
+med.taxon %>% 
+  group_by(Currentname) %>% 
+    filter(n()>1)
+
+rownames(med.taxon) <- med.taxon$Currentname
+med.taxon <- med.taxon[,-1]
+
+
+
+
+```
+
+
+```{r}
+med_taxdis <- taxa2dist(med.taxon, varstep = TRUE)
+med_taxdis <- head(med_taxdis, 10)
+med_taxdis
+
+plot(hclust(med_taxdis), hang = -1)
+```
+
+
+
