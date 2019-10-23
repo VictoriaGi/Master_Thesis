@@ -1,0 +1,78 @@
+---
+title: "diversity_indices"
+author: "Vica"
+date: "10/23/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+library(vegan)
+library(tidyverse)
+```
+```{r}
+data(BCI)
+sha <- diversity(BCI, "simpson")
+H <- diversity(BCI)
+```
+
+
+```{r}
+med <- read.csv("../Data/Med_cyano_list_20191003.csv")
+colnames(med)[1] <- "A/A"
+```
+
+
+```{r}
+species.number <- med %>% 
+  filter(Family != "") %>% 
+  select(Country, Currentname) %>% 
+  group_by(Country, Currentname) %>% 
+  summarize(N = n()) %>% 
+  spread(Currentname, N, fill=0, convert = FALSE, sep = NULL)
+
+species.number <- column_to_rownames(species.number, "Country")
+```
+
+# Shannon-Wiener diversity index for each Country
+
+```{r}
+species.number.sha <- diversity(species.number)
+```
+
+#Simpson diversity index 1 - D
+
+```{r}
+species.number.simp <- diversity(species.number, "simpson")
+```
+
+#Simpson index 1/D
+
+```{r}
+species.number.invsimp <- diversity(species.number, "inv")
+```
+
+# Fisher alpha
+
+```{r}
+species.number.alpha <- fisher.alpha(species.number)
+```
+
+#plot diversity indexes in a plot
+
+```{r}
+diver_plot <- pairs(cbind(species.number.sha, species.number.simp, species.number.invsimp, species.number.alpha), pch = "+", col ="red")
+```
+
+#Species richness
+
+```{r}
+species.number.rich <- specnumber(species.number)
+species.number.rich
+```
+
