@@ -1,0 +1,202 @@
+---
+title: "summary_diversity"
+author: "Vica"
+date: "10/24/2019"
+output: html_document
+---
+
+
+```{r}
+install.packages("ggplotAssist")
+library(ggplotAssist)
+```
+
+
+```{r}
+library(tidyverse)
+```
+
+# Insert csv file and filter only country in Mediterranean
+
+```{r}
+med <- read.csv("../Data/Med_cyano_list_20191024.csv", row.names = NULL)
+med <- med %>% 
+  filter(Med_border == "yes")
+colnames(med)[1] <- "A/A"
+```
+
+#Number of distinct taxa in each Order, optimization in a barplot
+
+```{r}
+species_order_disti <- med %>% 
+  filter(Order != "") %>%
+  select(Order, Currentname) %>% 
+  group_by(Order) %>% 
+  summarize(Number_species = n_distinct(Currentname)) %>% 
+  arrange(desc(Number_species))
+species_order_disti
+
+species_order_disti_plot <- ggplot(species_order_disti, aes(x = reorder(Order, -Number_species), y = Number_species, fill = Order)) + geom_bar(stat = "identity") + theme(legend.position = "none") + theme(axis.text.x = element_text(angle = 45)) + geom_text(aes(label = Number_species))
+species_order_disti_plot
+```
+
+#Number of taxa in each Order, optimization in a barplot
+
+```{r}
+species_order_all <- med %>% 
+  filter(Order != "") %>%
+  select(Order, Currentname) %>% 
+  group_by(Order) %>% 
+  summarize(Number_species = n())
+species_order_all
+
+species_order_all_plot <- ggplot(species_order_all, aes(x = reorder(Order, -Number_species), y = Number_species, fill = Order)) + geom_bar(stat = "identity") + theme(legend.position = "none") + theme(axis.text.x = element_text(angle = 45)) + geom_text(aes(label = Number_species))
+species_order_all_plot
+```
+
+```{r}
+a <- med %>%
+  select(Order, Family, Year)%>%
+  group_by(Order, Family) %>% 
+  summarize(N = n())
+a <- a[-1, ]
+a
+ggplot(a, aes( x = reorder(Order, -N), y = N, fill = Family)) + geom_bar(stat = "identity") + 
+  theme(legend.position = "none") + theme(axis.text.x = element_text(angle = 45))
+
+```
+
+
+#Number of taxa in each Family, optimization in a barplot
+
+```{r}
+species_family_all <- med %>%
+  filter(Family != "") %>% 
+  select(Family, Currentname) %>%
+  group_by(Family) %>% 
+  summarize(Number_of_species = n()) %>% 
+  arrange(desc(Number_of_species))
+species_family_all <- head(species_family_all, 10)
+
+species_family_all_plot <- ggplot(species_family_all, aes(x = reorder(Family,-Number_of_species), y = Number_of_species, fill = Family)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 45)) + geom_text(aes(label = Number_of_species)) + theme(legend.position = "none")
+species_family_all_plot
+```
+
+#Number of distinct taxa in each Family, optimization in a barplot
+
+```{r}
+species_family_disti <- med %>%
+  filter(Family != "") %>% 
+  select(Family, Currentname) %>%
+  group_by(Family) %>% 
+  summarize(Number_of_species = n_distinct(Currentname)) %>% 
+  arrange(desc(Number_of_species))
+species_family_disti <- head(species_family_disti, 10)
+
+species_family_disti_plot <- ggplot(species_family_disti, aes(x = reorder(Family,-Number_of_species), y = Number_of_species, fill = Family)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 45)) + geom_text(aes(label = Number_of_species)) + theme(legend.position = "none")
+species_family_disti_plot
+```
+
+#Number of  taxa in each Genus, optimization in a barplot
+
+```{r}
+species_genus_all <- med %>% 
+  filter(Order != "") %>% 
+  select(Genustotal, Currentname) %>% 
+  group_by(Genustotal) %>% 
+  summarize(Number_of_species = n()) %>% 
+  arrange(desc(Number_of_species))
+species_genus_all <- head(species_genus_all, 10)
+
+species_genus_all_plot <- ggplot(species_genus_all, aes(x = reorder(Genustotal, - Number_of_species), y = Number_of_species, fill = Genustotal)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 45)) + geom_text(aes(label = Number_of_species)) + theme(legend.position = "none")
+
+species_genus_all_plot
+```
+
+#Number of distinct taxa in each Genus, optimization in a barplot
+
+```{r}
+species_genus_disti <- med %>% 
+  filter(Order != "") %>% 
+  select(Genustotal, Currentname) %>% 
+  group_by(Genustotal) %>% 
+  summarize(Number_of_species = n_distinct(Currentname)) %>% 
+  arrange(desc(Number_of_species))
+species_genus_disti <- head(species_genus_disti, 10)
+
+species_genus_disti_plot <- ggplot(species_genus_disti, aes(x = reorder(Genustotal, - Number_of_species), y = Number_of_species, fill = Genustotal)) + geom_bar(stat = "identity")+ theme(axis.text.x = element_text(angle = 45)) + geom_text(aes(label = Number_of_species)) + theme(legend.position = "none")
+
+species_genus_disti_plot
+```
+
+#Bar chart number of records in each Order
+
+```{r}
+med_order <- med %>%
+  filter(Order != "") %>% 
+  select(Order, Family)%>%
+  count(Order, sort = TRUE)
+med_order
+
+
+med_order_bar <- ggplot (med_order, aes(x = reorder(Order, -n), y = n)) + geom_bar(stat = "identity")+
+  theme_classic() + theme(axis.text.x = element_text(angle = 45)) + theme(axis.line = element_line(size = 0.2, 
+    linetype = "solid"), axis.ticks = element_line(colour = "black"), 
+    panel.grid.major = element_line(colour = NA), 
+    panel.grid.minor = element_line(colour = NA), 
+    axis.text = element_text(size = 12, colour = "black"), 
+    panel.background = element_rect(fill = NA), 
+    plot.background = element_rect(colour = NA), 
+    legend.position = "none") +labs(x = NULL, y = NULL) + 
+  theme(axis.text.x = element_text(angle = 45)) +
+  theme(axis.text.x = element_text(vjust = 0.5))+ geom_text(aes(label = n), vjust = 1.6, color = "white", size = 3.5)
+
+med_order_bar
+ggsave("med_order_bar.png")
+```
+
+
+```{r}
+sample_n(med,5)
+taxa_distinct <- distinct(med, Currentname, .keep_all = FALSE)
+```
+
+
+
+```{r}
+med_currentname <- med %>%
+  filter(Species != "")%>%
+  select(Species, Currentname, Country)%>%
+  group_by(Country)%>%
+  summarize(Species_n = n())%>%
+arrange(desc(Species_n))
+#med_currentname <- med_currentname[-3,]
+med_currentname
+```
+
+#Unique Species in each country and barplot - NOT WORKING
+
+```{r}
+vec <- as.vector(med$Currentname)
+unique_species <- names(which(table(vec) == 1))
+unique_species_df <- med[med$Currentname %in% unique_species,]
+
+unique_species_count <- unique_species_df %>% 
+  group_by(Country)%>%
+  summarize(Number_unique_species = length(Currentname))
+
+colourCount = length(unique(unique_species_count$Country))
+
+        # make bars ordered
+unique_species_count$Country <- factor(unique_species_count$Country, 
+                                levels=unique_species_count$Country[order(unique_species_count$count, decreasing = T)])
+
+p <- ggplot(unique_species_count, aes(Country, unique_species_count)) +
+        geom_bar(stat="identity") +
+        theme_classic() + theme(legend.position = "none") + geom_text(aes(label=unique_species_count), vjust=1, colour = "white") +
+  theme(axis.text.x = element_text(angle = 45))
+p
+ggsave("p.png")
+```
+
+
