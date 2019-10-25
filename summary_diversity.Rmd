@@ -2,32 +2,32 @@
 title: "summary_diversity"
 author: "Vica"
 date: "10/24/2019"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
 ---
 
-
-```{r}
-install.packages("ggplotAssist")
-library(ggplotAssist)
-```
 
 
 ```{r}
 library(tidyverse)
+library(RColorBrewer)
 ```
 
-# Insert csv file and filter only country in Mediterranean
+# Insert csv file and filter only countries included in the Mediterranean region
 
-```{r}
+```{r, echo = FALSE, include=FALSE}
 med <- read.csv("../Data/Med_cyano_list_20191024.csv", row.names = NULL)
 med <- med %>% 
   filter(Med_border == "yes")
 colnames(med)[1] <- "A/A"
+med
 ```
 
 #Number of distinct taxa in each Order, optimization in a barplot
 
-```{r}
+```{r, echo=FALSE}
 species_order_disti <- med %>% 
   filter(Order != "") %>%
   select(Order, Currentname) %>% 
@@ -36,13 +36,25 @@ species_order_disti <- med %>%
   arrange(desc(Number_species))
 species_order_disti
 
-species_order_disti_plot <- ggplot(species_order_disti, aes(x = reorder(Order, -Number_species), y = Number_species, fill = Order)) + geom_bar(stat = "identity") + theme(legend.position = "none") + theme(axis.text.x = element_text(angle = 45)) + geom_text(aes(label = Number_species))
+brewer.pal(n = 8, name = "Accent")
+display.brewer.pal(n=8, "Accent")
+sfm <- c("#7FC97F","#BEAED4","#FDC086","#FFFF99","#386CB0","#F0027F","#BF5B17","#666666")
+sfm
+
+species_order_disti_plot <- ggplot(species_order_disti, aes(x = reorder(Order, -Number_species), y = Number_species, fill = Order )) + geom_bar(stat = "identity") + theme_minimal() + theme(legend.position = "none") + theme(axis.text.x = element_text(angle = 45)) + geom_text(aes(label = Number_species)) 
 species_order_disti_plot
+  scale_fill_manual(values = c ("Synechococcales " = "#7FC97F","Nostocales" = "#BEAED4",
+"Chroococales" = "#FDC086",
+"Oscillatoriales" = "#FFFF99",
+"Spirulinales" = "#386CB0",
+"Pleurocapsales" = "#F0027F",
+"Chroococcidiopsidales" = "#BF5B17",
+"Gloeobacterales" = "#666666"))
 ```
 
 #Number of taxa in each Order, optimization in a barplot
 
-```{r}
+```{r,echo=FALSE}
 species_order_all <- med %>% 
   filter(Order != "") %>%
   select(Order, Currentname) %>% 
@@ -54,15 +66,20 @@ species_order_all_plot <- ggplot(species_order_all, aes(x = reorder(Order, -Numb
 species_order_all_plot
 ```
 
-```{r}
-a <- med %>%
+
+
+```{r, echo=FALSE}
+family_per_order <- med %>%
+  filter(Family != "") %>% 
   select(Order, Family, Year)%>%
   group_by(Order, Family) %>% 
-  summarize(N = n())
-a <- a[-1, ]
-a
-ggplot(a, aes( x = reorder(Order, -N), y = N, fill = Family)) + geom_bar(stat = "identity") + 
+  summarize(N = n()) %>% 
+  arrange(desc(N))
+family_per_order
+
+family_per_order_plot<- ggplot(family_per_order, aes( x = reorder(Order, -N), y = N, fill = Family)) + geom_bar(stat = "identity") + theme_minimal() +
   theme(legend.position = "none") + theme(axis.text.x = element_text(angle = 45))
+family_per_order_plot
 
 ```
 
@@ -76,7 +93,7 @@ species_family_all <- med %>%
   group_by(Family) %>% 
   summarize(Number_of_species = n()) %>% 
   arrange(desc(Number_of_species))
-species_family_all <- head(species_family_all, 10)
+species_family_all <- head(species_family_all, 10) #Select the ten richest families
 
 species_family_all_plot <- ggplot(species_family_all, aes(x = reorder(Family,-Number_of_species), y = Number_of_species, fill = Family)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 45)) + geom_text(aes(label = Number_of_species)) + theme(legend.position = "none")
 species_family_all_plot
@@ -130,8 +147,9 @@ species_genus_disti_plot
 ```
 
 #Bar chart number of records in each Order
+##Same as the second barplot
 
-```{r}
+```{r, include=FALSE, cache=FALSE, echo=FALSE}
 med_order <- med %>%
   filter(Order != "") %>% 
   select(Order, Family)%>%
@@ -155,10 +173,100 @@ med_order_bar
 ggsave("med_order_bar.png")
 ```
 
+#Taxa found in habitat Pond
 
 ```{r}
-sample_n(med,5)
-taxa_distinct <- distinct(med, Currentname, .keep_all = FALSE)
+
+pond.hab.taxa.disti <- med %>%  select(Currentname, Isolationsource, Order, Country) %>% 
+  filter(Order != "") %>% 
+  filter_all(any_vars(str_detect(., pattern = "Pond"))) %>% 
+  group_by(Country, Isolationsource) %>% 
+  summarise(Taxa_records = n()) %>% 
+  arrange(desc(Taxa_records))
+pond.hab.taxa.disti
+
+```
+
+#Taxa found in habitat Lake
+
+```{r}
+lake.hab.taxa.disti <- med %>%  select(Currentname, Isolationsource, Order, Country) %>%
+  filter(Order != "") %>% 
+  filter_all(any_vars(str_detect(., pattern = "Lake"))) %>% 
+  group_by(Country, Isolationsource) %>% 
+  summarise(Taxa_records = n()) %>% 
+  arrange(desc(Taxa_records))
+lake.hab.taxa.disti
+```
+
+#Taxa found in habitat Reservoir and Dam
+
+```{r}
+reserv.hab.taxa.disti <- med %>%  select(Currentname, Isolationsource, Order, Country) %>%
+  filter(Order != "") %>% 
+  filter((str_detect(Isolationsource, pattern = c("Reservoir", "Dam")))) %>% 
+  group_by(Country, Isolationsource) %>% 
+  summarise(Taxa_records = n()) %>% 
+  arrange(desc(Taxa_records))
+reserv.hab.taxa.disti
+```
+
+#Taxa found in habitat River
+
+```{r}
+river.hab.taxa.disti <- med %>%  select(Currentname, Isolationsource, Order, Country) %>%
+  filter(Order != "") %>% 
+  filter_all(any_vars(str_detect(., pattern = "River"))) %>% 
+  group_by(Country, Isolationsource) %>% 
+  summarise(Taxa_distinct = n_distinct(Currentname)) %>% 
+  arrange(desc(Taxa_distinct))
+river.hab.taxa.disti
+```
+
+#Taxa found in habitat Stream
+
+```{r}
+stream.hab.taxa.disti <- med %>%  select(Currentname, Isolationsource, Order, Country) %>%
+  filter(Order != "") %>% 
+  filter_all(any_vars(str_detect(., pattern = "Stream"))) %>% 
+  group_by(Country,Isolationsource) %>% 
+  summarise(Taxa_distinct = n_distinct(Currentname)) %>% 
+  arrange(desc(Taxa_distinct))
+stream.hab.taxa.disti
+```
+
+
+
+```{r}
+spring.hab.taxa.disti <- med %>%  select(Currentname, Isolationsource, Order, Country) %>%
+  filter(Order != "") %>% 
+  filter_all(any_vars(str_detect(., pattern = "spring"))) %>% 
+  group_by(Country, Isolationsource) %>% 
+  summarise(Taxa_distinct = n_distinct(Currentname)) %>% 
+  arrange(desc(Taxa_distinct))
+spring.hab.taxa.disti
+
+
+spring.taxa <- med %>% 
+  filter(Order != "") %>% 
+  select(Currentname, Isolationsource, Order, Country) %>% 
+  filter(str_detect(.$Isolationsource, c("Dam"))) %>% 
+  group_by(Country, Isolationsource) %>% 
+  summarize(T = n())
+spring.taxa
+```
+
+
+
+
+```{r}
+taxa.habitat <- split(med, med$Habitat_type)
+taxa.habitat
+
+unique.taxa.habitat <- sapply(taxa.habitat, function(x){
+  unique(x["Currentname"])
+})
+unique.taxa.habitat
 ```
 
 
@@ -168,35 +276,34 @@ med_currentname <- med %>%
   filter(Species != "")%>%
   select(Species, Currentname, Country)%>%
   group_by(Country)%>%
-  summarize(Species_n = n())%>%
-arrange(desc(Species_n))
-#med_currentname <- med_currentname[-3,]
+  summarize(Taxa_records = n())%>%
+arrange(desc(Taxa_records))
 med_currentname
 ```
 
-#Unique Species in each country and barplot - NOT WORKING
+##Unique Species in each country and barplot - NOT WORKING
 
 ```{r}
-vec <- as.vector(med$Currentname)
-unique_species <- names(which(table(vec) == 1))
-unique_species_df <- med[med$Currentname %in% unique_species,]
+#vec <- as.vector(med$Currentname)
+#unique_species <- names(which(table(vec) == 1))
+#unique_species_df <- med[med$Currentname %in% unique_species,]
 
-unique_species_count <- unique_species_df %>% 
-  group_by(Country)%>%
-  summarize(Number_unique_species = length(Currentname))
+#unique_species_count <- unique_species_df %>% 
+  #group_by(Country)%>%
+  #summarize(Number_unique_species = length(Currentname))
 
-colourCount = length(unique(unique_species_count$Country))
+#colourCount = length(unique(unique_species_count$Country))
 
         # make bars ordered
-unique_species_count$Country <- factor(unique_species_count$Country, 
-                                levels=unique_species_count$Country[order(unique_species_count$count, decreasing = T)])
+#unique_species_count$Country <- factor(unique_species_count$Country, 
+                                #levels=unique_species_count$Country[order(unique_species_count$count, decreasing = T)])
 
-p <- ggplot(unique_species_count, aes(Country, unique_species_count)) +
-        geom_bar(stat="identity") +
-        theme_classic() + theme(legend.position = "none") + geom_text(aes(label=unique_species_count), vjust=1, colour = "white") +
-  theme(axis.text.x = element_text(angle = 45))
-p
-ggsave("p.png")
+#p <- ggplot(unique_species_count, aes(Country, unique_species_count)) +
+        #geom_bar(stat="identity") +
+        #theme_classic() + theme(legend.position = "none") + geom_text(aes(label=unique_species_count), vjust=1, colour = "white") +
+  #theme(axis.text.x = element_text(angle = 45))
+#p
+#ggsave("p.png")
 ```
 
 
