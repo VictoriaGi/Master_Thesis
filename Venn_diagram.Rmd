@@ -1,0 +1,81 @@
+---
+title: "venn_diagram"
+author: "Vica"
+date: "10/26/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+med <- read.csv("../Data/Med_cyano_list_20191024.csv", row.names = NULL)
+med <- med %>% 
+  filter(Med_border == "yes")
+colnames(med)[1] <- "A/A"
+med
+```
+
+
+
+```{r}
+inter <- list()
+for(i in 1:length(levels(med$Habitat))){
+inter[[i]] <- intersect(filter(med, Habitat == levels(Habitat)[i])$Currentname, 
+                        filter(med, Habitat == levels(Habitat)[i+1])$Currentname)
+}
+```
+
+
+```{r}
+Reduce(intersect,list(group_by(med, Habitat)$Currentname))
+```
+
+```{r}
+library(RVenn)
+
+med <- droplevels(med)
+
+test <- split(med, med$Habitat)
+test2 <- lapply(test, select(Currentname))
+
+test2 <- sapply(test, function(x){
+  unique(x["Currentname"])
+})
+test3<- lapply(test2, droplevels)
+test4 <- lapply(test3, as.character)
+test5 <- Venn(test4)
+overlaps <- overlap_pairs(test5)
+```
+
+```{r}
+ggvenn(test5, slice = c(3,6,8))
+```
+
+```{r}
+setmap(test5)
+```
+
+# 2nd try
+```{r}
+# Get the combinations of names of list elements
+nms <- combn( names(test3) , 2 , FUN = paste0 , collapse = "" , simplify = FALSE )
+
+# Make the combinations of list elements
+ll <- combn( test3 , 2 , simplify = FALSE )
+
+# Intersect the list elements
+out <- lapply( ll , function(x) length( intersect( x[[1]] , x[[2]] ) ) )
+
+# Output with names
+my_list <- setNames( out , nms )
+```
+

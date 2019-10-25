@@ -1,0 +1,9 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.docx
+*.tex
+*.html
+*.png
+ggmap.nb.html
