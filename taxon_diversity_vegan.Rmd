@@ -1,0 +1,121 @@
+---
+title: "vegan_package"
+author: "Vica"
+date: "10/21/2019"
+output: html_document
+---
+
+
+```{r}
+library(vegan)
+library(tidyverse)
+```
+
+# Taxonomic diversity and taxonomic distinctness 
+
+```{r}
+med <- read.csv("../Data/Med_cyano_list_20191024.csv", row.names = NULL)
+med <- med %>% 
+  filter(Med_border == "yes")
+colnames(med)[1] <- "A/A"
+med <- med %>% 
+  mutate(continent = case_when(Country %in% c("Greece", "Italy", "Spain", "France", "Albania", "Montenegro", "Slovenia", "Portugal", "Bulgaria", "Croatia") ~ "Europe",
+                               Country %in% c("Egypt", "Morocco", "Tunisia", "Libya", "Algeria", "Israel","Lebanon") ~ "Africa",Country == "Turkey" ~ "Asia"))
+```
+
+# Dataset with Countries as rows and taxa as columns for ALBANIA (AL)
+
+```{r}
+med.taxa.AL <- med %>% 
+  select(Country, Order, Currentname, Isolationsource) %>% 
+  filter(Order != "" & Country == "Albania") %>% 
+  group_by(Isolationsource, Currentname) %>% 
+  summarize(N = n()) %>% spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) %>%
+  column_to_rownames("Isolationsource")
+```
+
+# Taxonomic distances from a classification table with variable step lengths for ALBANIA (AL)
+
+```{r}
+med.taxon.AL <- med %>% 
+  filter(Order != "" & Country == "Albania") %>% 
+  distinct(Class, Order, Family, Genustotal, Currentname)%>% 
+  column_to_rownames("Currentname")
+
+med.taxon.AL <- droplevels(med.taxon.AL)
+
+
+med.taxon.AL.dist <- taxa2dist(med.taxon.AL, varstep = TRUE)
+AL.plot <- plot(hclust(med.taxon.AL.dist), hang = -1)
+```
+
+# Taxonomic diversity indices
+
+```{r}
+AL.indices <- taxondive(med.taxa.AL, med.taxon.AL.dist)
+summary(AL.indices)
+plot(AL.indices)
+```
+```{r}
+med.taxa.GR <- med %>% 
+  select(Country, Order, Currentname, Isolationsource) %>% 
+  filter(Order != "" & Country == "Greece") %>% 
+  group_by(Isolationsource, Currentname) %>% 
+  summarize(N = n()) %>% spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) %>%
+  column_to_rownames("Isolationsource")
+```
+
+```{r}
+med.taxon.GR <- med %>% 
+  filter(Order != "" & Country == "Greece") %>% 
+  distinct(Class, Order, Family, Genustotal, Currentname)%>% 
+  column_to_rownames("Currentname")
+
+med.taxon.GR <- droplevels(med.taxon.GR)
+
+
+med.taxon.GR.dist <- taxa2dist(med.taxon.GR, varstep = TRUE)
+GR.plot <- plot(hclust(med.taxon.GR.dist), hang = -1)
+```
+
+```{r}
+GR.indices <- taxondive(med.taxa.GR, med.taxon.GR.dist)
+summary(GR.indices)
+plot(GR.indices)
+```
+
+
+
+
+
+
+
+
+```{r}
+africa.taxa <- med %>% 
+  select(Country, Order, Currentname) %>% 
+  filter(Order != "" & Country %in% c("Morocco", "ALgeria", "Libya", "Tunisia", "Egypt", "Israel", "Lebanon")) %>% 
+  group_by(Country, Currentname) %>% 
+  summarize(N = n()) %>% spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) %>%
+  column_to_rownames("Country")
+```
+
+```{r}
+africa.taxon <- med %>% 
+  filter(Order != "",Country %in% c("Morocco", "ALgeria", "Libya", "Tunisia", "Egypt", "Israel", "Lebanon" )) %>% 
+  distinct(Class, Order, Family, Genustotal, Currentname)%>% 
+  column_to_rownames("Currentname")
+
+africa.taxon <- droplevels(africa.taxon)
+
+
+africa.taxon.dis <- taxa2dist(africa.taxon, varstep = TRUE)
+GR.plot <- plot(hclust(africa.taxon.dis), hang = -1)
+```
+
+```{r}
+africa.ind <- taxondive(africa.taxa, africa.taxon.dis)
+summary(africa.ind)
+plot(africa.ind)
+```
+
