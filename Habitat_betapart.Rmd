@@ -1,0 +1,75 @@
+---
+title: "betapart_Habitat"
+author: "Vica"
+date: "11/5/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(betapart)
+library(tidyverse)
+```
+
+
+```{r}
+med <- read.csv("../Data/Med_cyano_list_20191024.csv", row.names = NULL)
+med <- med %>% 
+  filter(Med_border == "yes")
+colnames(med)[1] <- "A/A"
+med <- med %>% 
+  mutate(continent = case_when(Country %in% c("Greece", "Italy", "Spain", "France", "Albania", "Montenegro", "Slovenia", "Portugal", "Bulgaria", "Croatia") ~ "Europe",
+                               Country %in% c("Egypt", "Morocco", "Tunisia", "Libya", "Algeria", "Israel","Lebanon") ~ "Africa",Country == "Turkey" ~ "Asia"))
+```
+
+# Dataset with Habitats as rows and taxa as columns
+## Checking the partitioning beta diversity (turnover + nestedness)
+
+```{r}
+med.habi <- med %>% 
+  select (Order, Currentname, Habitat, Habitat_type) %>% 
+  filter(Order != "") %>% 
+  group_by(Habitat, Currentname) %>% 
+  summarize(N = n_distinct(Habitat)) %>% spread(Currentname, N, fill = 0) %>% 
+  column_to_rownames("Habitat")
+
+med.habi
+
+med.habi[med.habi >= 2] <- 1
+med.habi 
+
+med.habi.core <- betapart.core(med.habi) 
+med.habi.core
+
+med.habi.core.multij <- beta.multi(med.habi.core, index.family = "jaccard")
+med.habi.core.multij
+med.habi.core.multis <- beta.multi(med.habi.core, index.family = "sorensen")
+med.habi.core.multis
+
+```
+
+
+
+```{r}
+med.habi.samp.sor <- beta.sample(med.habi.core, samples = 100, index.family = "sorensen")
+med.habi.samp.jac <- beta.sample(med.habi.core, samples = 100, index.family = "jaccard")
+med.habi.samp.jac
+med.habi.samp <- beta.sample(med.habi.core, samples = 100)
+```
+
+
+
+```{r}
+med.habi.dist <- med.habi.samp$sampled.values 
+plot(density(med.habi.dist$beta.SOR), xlim = c(0, 2), ylim = c(0,10), xlab = "Beta diversity", main = "", lwd = 3)+
+lines(density(med.habi.dist$beta.SNE), lty = 1, lwd = 2) + lines(density(med.habi.dist$beta.SIM), lty = 2, lwd = 2)
+
+med.habi.pair <- beta.pair(med.habi)
+plot(hclust(med.habi.pair$beta.sim, method = "average"), hang = -1, main = "", sub = "", xlab = "")
+plot(hclust(med.habi.pair$beta.sne, method = "average"), hang = -1, main = "", sub = "", xlab = "")
+plot(hclust(med.habi.pair$beta.sor, method = "average"), hang = -1, main = "", sub = "", xlab = "")
+```
