@@ -26,12 +26,42 @@ med <- med %>%
 # Dataset with Countries as rows and taxa as columns for ALBANIA (AL)
 
 ```{r}
-med.taxa.AL <- med %>% 
-  select(Country, Order, Currentname, Isolationsource) %>% 
-  filter(Order != "" & Country == "Albania") %>% 
-  group_by(Isolationsource, Currentname) %>% 
-  summarize(N = n()) %>% spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) %>%
-  column_to_rownames("Isolationsource")
+med.habi <- med %>% 
+  select( Order, Currentname, Habitat) %>% 
+  filter(Order != "") %>% 
+  group_by(Order, Currentname, Habitat) %>% 
+  summarize(N = n()) %>% spread(Habitat, N, fill = 0, convert = FALSE, sep = NULL) %>%
+  column_to_rownames("Currentname")
+
+med.habi[med.habi >= 2] <- 1
+```
+
+```{r}
+habi.dist <- dist(med.habi)
+habi.dist.plot <- plot.phylo(as.phylo(hclust(habi.dist)), type="fan", 
+                       label.offset = 0.5, cex = 0.3, xpd=TRUE)
+
+
+
+```
+
+```{r fig.height=10}
+habi.dist.horiz <- plot.phylo(as.phylo(hclust(habi.dist)), 
+                       label.offset = 0.5, cex = 0.3, xpd=TRUE)
+```
+
+```{r}
+library(factoextra)
+library(FactoMineR)
+
+med.habi.pca <- PCA(med.habi[,-1], ncp=10, graph=TRUE)
+```
+
+```{r}
+fviz_pca_ind(med.habi.pca,
+             geom.ind = "point",
+             col.ind = med.habi$Order,
+             addEllipses = T)
 ```
 
 # Taxonomic distances from a classification table with variable step lengths for ALBANIA (AL)
@@ -56,6 +86,7 @@ AL.indices <- taxondive(med.taxa.AL, med.taxon.AL.dist)
 summary(AL.indices)
 plot(AL.indices)
 ```
+
 ```{r}
 med.taxa.GR <- med %>% 
   select(Country, Order, Currentname, Isolationsource) %>% 
@@ -75,13 +106,8 @@ med.taxon.GR <- droplevels(med.taxon.GR)
 
 
 med.taxon.GR.dist <- taxa2dist(med.taxon.GR, varstep = TRUE)
-GR.plot <- plot(hclust(med.taxon.GR.dist), hang = -1)
-```
-
-```{r}
-GR.indices <- taxondive(med.taxa.GR, med.taxon.GR.dist)
-summary(GR.indices)
-plot(GR.indices)
+library(ape)
+GR.plot <- plot(as.phylo(hclust(med.taxon.GR.dist)), type="fan")
 ```
 
 
@@ -90,32 +116,4 @@ plot(GR.indices)
 
 
 
-
-```{r}
-africa.taxa <- med %>% 
-  select(Country, Order, Currentname) %>% 
-  filter(Order != "" & Country %in% c("Morocco", "ALgeria", "Libya", "Tunisia", "Egypt", "Israel", "Lebanon")) %>% 
-  group_by(Country, Currentname) %>% 
-  summarize(N = n()) %>% spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) %>%
-  column_to_rownames("Country")
-```
-
-```{r}
-africa.taxon <- med %>% 
-  filter(Order != "",Country %in% c("Morocco", "ALgeria", "Libya", "Tunisia", "Egypt", "Israel", "Lebanon" )) %>% 
-  distinct(Class, Order, Family, Genustotal, Currentname)%>% 
-  column_to_rownames("Currentname")
-
-africa.taxon <- droplevels(africa.taxon)
-
-
-africa.taxon.dis <- taxa2dist(africa.taxon, varstep = TRUE)
-GR.plot <- plot(hclust(africa.taxon.dis), hang = -1)
-```
-
-```{r}
-africa.ind <- taxondive(africa.taxa, africa.taxon.dis)
-summary(africa.ind)
-plot(africa.ind)
-```
 
