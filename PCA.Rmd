@@ -1,0 +1,90 @@
+---
+title: "PCA"
+author: "Vica"
+date: "11/3/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse)
+library(factoextra)
+library(FactoMineR)
+```
+
+# Taxonomic diversity and taxonomic distinctness 
+
+```{r}
+med <- read.csv("../Data/Med_cyano_list_20191024.csv", row.names = NULL)
+med <- med %>% 
+  filter(Med_border == "yes")
+colnames(med)[1] <- "A/A"
+med <- med %>% 
+  mutate(continent = case_when(Country %in% c("Greece", "Italy", "Spain", "France", "Albania", "Montenegro", "Slovenia", "Portugal", "Bulgaria", "Croatia") ~ "Europe",
+                               Country %in% c("Egypt", "Morocco", "Tunisia", "Libya", "Algeria", "Israel","Lebanon") ~ "Africa",Country == "Turkey" ~ "Asia"))
+```
+
+
+# Habitat
+```{r}
+med.habi <- med %>% 
+  select( Order, Currentname, Habitat) %>% 
+  filter(Order != "") %>% 
+  group_by(Order, Currentname, Habitat) %>% 
+  summarize(N = n()) %>% spread(Habitat, N, fill = 0, convert = FALSE, sep = NULL) %>%
+  column_to_rownames("Currentname")
+
+med.habi[med.habi >= 2] <- 1
+```
+
+
+```{r}
+med.habi.pca <- PCA(med.habi[,-1], ncp=10, graph=TRUE)
+```
+
+```{r}
+fviz_pca_ind(med.habi.pca,
+             geom.ind = "point",
+             col.ind = med.habi$Order,
+             addEllipses = T)
+```
+
+## DCA using med.habi
+```{r fig.width=15, fig.height=20}
+med.habi.dca <- decorana(veg = t(med.habi[,-1]))
+# summary(med.habi.dca)
+
+plot(med.habi.dca)
+points(med.habi.dca, display=c("sites"), choices=1:2,
+pch=3, col="green")
+text(med.habi.dca, display=c("species"), choices=1:2,
+cex=0.7)
+```
+
+# Habitat type
+```{r}
+med.habi_t <- med %>% 
+  select( Order, Currentname, Habitat_type) %>% 
+  filter(Order != "") %>% 
+  group_by(Order, Currentname, Habitat_type) %>% 
+  summarize(N = n()) %>% spread(Habitat_type, N, fill = 0, convert = FALSE, sep = NULL) %>%
+  column_to_rownames("Currentname")
+
+med.habi_t[med.habi_t >= 2] <- 1
+```
+
+
+```{r}
+med.habi_t.pca <- PCA(med.habi_t[,-1], ncp=10, graph=TRUE)
+```
+
+```{r}
+fviz_pca_ind(med.habi_t.pca,
+             geom.ind = "point",
+             col.ind = med.habi_t$Order,
+             addEllipses = T)
+```
