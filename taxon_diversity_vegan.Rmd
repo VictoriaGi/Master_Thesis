@@ -11,7 +11,7 @@ library(vegan)
 library(tidyverse)
 ```
 
-# Taxonomic diversity and taxonomic distinctness 
+
 
 ```{r}
 med <- read.csv("../Data/Med_cyano_list_20191024.csv", row.names = NULL)
@@ -23,25 +23,12 @@ med <- med %>%
                                Country %in% c("Egypt", "Morocco", "Tunisia", "Libya", "Algeria", "Israel","Lebanon") ~ "Africa",Country == "Turkey" ~ "Asia"))
 ```
 
-# Dataset with Countries as rows and taxa as columns for ALBANIA (AL)
 
-```{r}
-med.habi <- med %>% 
-  select( Order, Currentname, Habitat) %>% 
-  filter(Order != "") %>% 
-  group_by(Order, Currentname, Habitat) %>% 
-  summarize(N = n()) %>% spread(Habitat, N, fill = 0, convert = FALSE, sep = NULL) %>%
-  column_to_rownames("Currentname")
-
-med.habi[med.habi >= 2] <- 1
-```
 
 ```{r}
 habi.dist <- dist(med.habi)
 habi.dist.plot <- plot.phylo(as.phylo(hclust(habi.dist)), type="fan", 
                        label.offset = 0.5, cex = 0.3, xpd=TRUE)
-
-
 
 ```
 
@@ -64,28 +51,6 @@ fviz_pca_ind(med.habi.pca,
              addEllipses = T)
 ```
 
-# Taxonomic distances from a classification table with variable step lengths for ALBANIA (AL)
-
-```{r}
-med.taxon.AL <- med %>% 
-  filter(Order != "" & Country == "Albania") %>% 
-  distinct(Class, Order, Family, Genustotal, Currentname)%>% 
-  column_to_rownames("Currentname")
-
-med.taxon.AL <- droplevels(med.taxon.AL)
-
-
-med.taxon.AL.dist <- taxa2dist(med.taxon.AL, varstep = TRUE)
-AL.plot <- plot(hclust(med.taxon.AL.dist), hang = -1)
-```
-
-# Taxonomic diversity indices
-
-```{r}
-AL.indices <- taxondive(med.taxa.AL, med.taxon.AL.dist)
-summary(AL.indices)
-plot(AL.indices)
-```
 
 ```{r}
 med.taxa.GR <- med %>% 
