@@ -13,6 +13,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(betapart)
 library(tidyverse)
+library(mapproj)
+library(vegan)
 ```
 
 
@@ -24,6 +26,11 @@ colnames(med)[1] <- "A/A"
 med <- med %>% 
   mutate(continent = case_when(Country %in% c("Greece", "Italy", "Spain", "France", "Albania", "Montenegro", "Slovenia", "Portugal", "Bulgaria", "Croatia") ~ "Europe",
                                Country %in% c("Egypt", "Morocco", "Tunisia", "Libya", "Algeria", "Israel","Lebanon") ~ "Africa",Country == "Turkey" ~ "Asia"))
+
+med <- med %>% 
+mutate(lat_range = case_when(DD_Lat < 30 ~ "Low", DD_Lat > 30 & DD_Lat < 40 ~ "Medium",
+                             DD_Lat > 40 ~ "High"))
+med
 ```
 
 # Dataset with Habitats as rows and taxa as columns
@@ -37,16 +44,21 @@ med.habi <- med %>%
   summarize(N = n_distinct(Habitat)) %>% spread(Currentname, N, fill = 0) %>% 
   column_to_rownames("Habitat")
 
-med.habi
-
 med.habi[med.habi >= 2] <- 1
 med.habi 
+
+# Computing the basic quantities needed for the multiple-site beta diversity measures
 
 med.habi.core <- betapart.core(med.habi) 
 med.habi.core
 
-med.habi.core.multij <- beta.multi(med.habi.core, index.family = "jaccard")
+#Computing the total dissimilarity across all habitats, Jaccard index
+
+med.habi.core.multij <- beta.multi(med.habi.core, index.family = "jaccard") #bJTU component of turnover
 med.habi.core.multij
+
+#Computing the total dissimilarity across all habitats, Sorensen index
+
 med.habi.core.multis <- beta.multi(med.habi.core, index.family = "sorensen")
 med.habi.core.multis
 
@@ -68,8 +80,112 @@ med.habi.dist <- med.habi.samp$sampled.values
 plot(density(med.habi.dist$beta.SOR), xlim = c(0, 2), ylim = c(0,10), xlab = "Beta diversity", main = "", lwd = 3)+
 lines(density(med.habi.dist$beta.SNE), lty = 1, lwd = 2) + lines(density(med.habi.dist$beta.SIM), lty = 2, lwd = 2)
 
-med.habi.pair <- beta.pair(med.habi)
+# Computing the same dissimilarity metrics as above ( can be used e.g. Mantel tests, cluster analysis)
+
+med.habi.pair <- beta.pair(med.habi) # can be impemented in other analyses like cluster
+
 plot(hclust(med.habi.pair$beta.sim, method = "average"), hang = -1, main = "", sub = "", xlab = "")
 plot(hclust(med.habi.pair$beta.sne, method = "average"), hang = -1, main = "", sub = "", xlab = "")
 plot(hclust(med.habi.pair$beta.sor, method = "average"), hang = -1, main = "", sub = "", xlab = "")
 ```
+
+# Dataset with Habitats as rows and taxa as columns -->  Low latitude
+## Checking the partitioning beta diversity (turnover + nestedness)
+
+```{r}
+low.lat <- med %>% 
+  select(Order, Currentname, Isolationsource, lat_range) %>% 
+  filter(Order != "", lat_range == "Low") %>% 
+  group_by(Isolationsource, Currentname) %>% 
+  summarize(N = n_distinct(Isolationsource)) %>% spread(Currentname, N, fill = 0) %>% 
+  column_to_rownames("Isolationsource")
+  low.lat
+  
+low.lat.core <- betapart.core(low.lat) 
+low.lat.core
+
+low.lat.core.multij <- beta.multi(low.lat.core, index.family = "jaccard")
+low.lat.core.multij
+low.lat.core.multis <- beta.multi(low.lat.core, index.family = "sorensen")
+low.lat.core.multis
+```
+
+```{r}
+low.lat.samp.sor <- beta.sample(low.lat.core, samples = 100, index.family = "sorensen")
+low.lat.samp.jac <- beta.sample(low.lat.core, samples = 100, index.family = "jaccard")
+low.lat.samp.jac
+low.lat.samp <- beta.sample(low.lat.core, samples = 100)
+```
+
+```{r}
+low.lat.dist <- low.lat.samp$sampled.values 
+plot(density(low.lat.dist$beta.SOR), xlim = c(0, 2), ylim = c(0,40), xlab = "Beta diversity", main = "", lwd = 3)+
+lines(density(low.lat.dist$beta.SNE), lty = 1, lwd = 2) + lines(density(low.lat.dist$beta.SIM), lty = 2, lwd = 2)
+
+low.lat.pair <- beta.pair(low.lat)
+plot(hclust(low.lat.pair$beta.sim, method = "average"), hang = -1, main = "", sub = "", xlab = "")
+plot(hclust(low.lat.pair$beta.sne, method = "average"), hang = -1, main = "", sub = "", xlab = "")
+plot(hclust(low.lat.pair$beta.sor, method = "average"), hang = -1, main = "", sub = "", xlab = "")
+```
+
+
+# Dataset with Habitats as rows and taxa as columns -->  Medium latitude
+## Checking the partitioning beta diversity (turnover + nestedness)
+
+```{r}
+med.lat <- med %>% 
+  select(Order, Currentname, Isolationsource, lat_range) %>% 
+  filter(Order != "", lat_range == "Medium") %>% 
+  group_by(Isolationsource, Currentname) %>% 
+  summarize(N = n_distinct(Isolationsource)) %>% spread(Currentname, N, fill = 0) %>% 
+  column_to_rownames("Isolationsource")
+  med.lat
+  
+med.lat.core <- betapart.core(med.lat) 
+med.lat.core
+
+med.lat.core.multij <- beta.multi(med.lat.core, index.family = "jaccard")
+med.lat.core.multij
+med.lat.core.multis <- beta.multi(med.lat.core, index.family = "sorensen")
+med.lat.core.multis
+```
+
+# Dataset with Habitats as rows and taxa as columns -->  High latitude
+## Checking the partitioning beta diversity (turnover + nestedness)
+
+```{r}
+ high.lat <- med %>%
+  select(Order, Currentname, Isolationsource, lat_range) %>% 
+  filter(Order != "", lat_range == "High") %>% 
+  group_by(Isolationsource, Currentname) %>% 
+  summarize(N = n_distinct(Isolationsource)) %>% spread(Currentname, N, fill = 0) %>% 
+  column_to_rownames("Isolationsource")
+  high.lat
+  
+high.lat.core <- betapart.core(high.lat) 
+high.lat.core
+
+high.lat.core.multij <- beta.multi(high.lat.core, index.family = "jaccard")
+high.lat.core.multij
+high.lat.core.multis <- beta.multi(high.lat.core, index.family = "sorensen")
+high.lat.core.multis
+```
+
+
+```{r}
+hab.taxa <- med %>%
+  select(Order, Currentname, Isolationsource) %>% 
+  filter(Order != "") %>% 
+  group_by(Isolationsource, Currentname) %>% 
+  summarize(N = n_distinct(Isolationsource)) %>% spread(Currentname, N, fill = 0) %>% 
+  column_to_rownames("Isolationsource")
+  hab.taxa
+
+hab.taxa.core <- betapart.core(hab.taxa)
+
+hab.taxa.core.multij <- beta.multi(hab.taxa.core, index.family = "jaccard")
+hab.taxa.core.multij
+hab.taxa.multis <-  beta.multi(hab.taxa.core, index.family = "sorensen")
+hab.taxa.multis
+```
+
