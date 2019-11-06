@@ -1,0 +1,82 @@
+---
+title: "heatmap"
+author: "Vica"
+date: "11/6/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+df <- scale(mtcars)
+df
+```
+
+```{r}
+med <- read.csv("../Data/Med_cyano_list_20191024.csv", row.names = NULL)
+med <- med %>% 
+  filter(Med_border == "yes")
+colnames(med)[1] <- "A/A"
+med <- med %>% 
+  mutate(continent = case_when(Country %in% c("Greece", "Italy", "Spain", "France", "Albania", "Montenegro", "Slovenia", "Portugal", "Bulgaria", "Croatia") ~ "Europe",
+                               Country %in% c("Egypt", "Morocco", "Tunisia", "Libya", "Algeria", "Israel","Lebanon") ~ "Africa",Country == "Turkey" ~ "Asia"))
+
+med <- med %>% 
+mutate(lat_range = case_when(DD_Lat < 30 ~ "Low", DD_Lat > 30 & DD_Lat < 40 ~ "Medium",
+                             DD_Lat > 40 ~ "High"))
+med
+```
+
+
+```{r}
+med.toxins <- read.csv("../Data/Mediterranean_Cyanobacteria_toxins.csv")
+colnames(med.toxins)[1] <- "A/A"
+med.toxins
+```
+
+
+```{r}
+
+unique(med.toxins$Currentname)
+med.heat <- med.toxins %>% 
+  select(Currentname,Toxin) %>% 
+  group_by(Currentname, Toxin) %>% 
+  summarize(N = n_distinct("Currentname"))  %>% column_to_rownames("Currentname")
+
+```
+
+# Representing different toxins per habitat
+
+```{r}
+habtox <- med.toxins %>% 
+  select(Habitat, Toxin) %>% 
+  group_by(Habitat, Toxin) %>% 
+  summarize(N = n())
+habtox
+
+habtox.plot <- ggplot(habtox, aes(x = Habitat, y = N, fill = Toxin)) + geom_bar(stat = "identity")
+habtox.plot
+
+habtox <-  as.matrix(habtox)
+```
+```{r}
+countrytox <- med.toxins %>% 
+  select(Country, Toxin) %>% 
+  group_by(Country, Toxin) %>% 
+  summarize(N = n())
+countrytox
+
+countrytox.plot <- ggplot(countrytox, aes(x = Country, y = N, fill = Toxin)) + geom_bar(stat = "identity")
+countrytox.plot
+
+country.plot <- ggplot(countrytox, aes(x =reorder(Country, - N), y = N)) + geom_bar(stat = "identity")
+country.plot
+```
+
