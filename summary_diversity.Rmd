@@ -11,8 +11,11 @@ output:
 
 
 ```{r echo=FALSE}
-library(tidyverse)
 library(RColorBrewer)
+library(betapart)
+library(tidyverse)
+library(mapproj)
+library(vegan)
 
 ```
 
@@ -27,11 +30,16 @@ colnames(med)[1] <- "A/A"
 med <- med %>% 
   mutate(continent = case_when(Country %in% c("Greece", "Italy", "Spain", "France", "Albania", "Montenegro", "Slovenia", "Portugal", "Bulgaria", "Croatia") ~ "Europe",
                                Country %in% c("Egypt", "Morocco", "Tunisia", "Libya", "Algeria", "Israel","Lebanon") ~ "Africa",Country == "Turkey" ~ "Asia"))
+
+med <- med %>% 
+mutate(lat_range = case_when(DD_Lat < 30 ~ "Low", DD_Lat > 30 & DD_Lat < 40 ~ "Medium",
+                             DD_Lat > 40 ~ "High"))
 ```
 
 #Number of distinct taxa in each Order, optimization in a barplot
 
-```{r}
+```{r, fig.height = 4, fig.width = 6}
+
 species_order_disti <- med %>% 
   filter(Order != "") %>%
   select(Order, Currentname) %>% 
@@ -49,44 +57,29 @@ write.csv(species_order_disti, file = "Taxa_Order.csv") #Export the dataframe to
 #sfm <- c("#7FC97F","#BEAED4","#FDC086","#FFFF99","#386CB0","#F0027F","#BF5B17","#666666")
 #sfm
 
-species_order_disti_plot <- ggplot(species_order_disti, aes(x =reorder(Order, Number_taxa), y = Number_taxa, fill = Order )) + geom_bar(stat = "identity") + theme_classic() + theme(legend.position = "none") + geom_text(aes(label = Number_taxa)) 
-species_order_disti_plot + coord_flip() + ylab("Number of taxa") + xlab("") +
-scale_fill_manual(values = c (
-"Synechococcales" = "#7FC97F",
-"Nostocales" = "#BEAED4",
-"Chroococcales" = "#FDC086",
-"Oscillatoriales" = "#FFFF99",
-"Spirulinales" = "#386CB0",
-"Pleurocapsales" = "#F0027F",
-"Chroococcidiopsidales" = "#BF5B17",
-"Gloeobacterales" = "#666666"))
+species_order_disti_plot <- ggplot(species_order_disti, aes(x =reorder(Order, Number_taxa), y = Number_taxa, fill = Order )) + geom_bar(stat = "identity", colour = "black", width = 0.7) + theme_classic() + theme(legend.position = "none") + 
+  theme(
+    panel.background = element_rect(fill = "transparent"), # bg of the panel
+    plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
+    panel.grid.major = element_blank(), # get rid of major grid
+    panel.grid.minor = element_blank(), # get rid of minor grid
+    legend.background = element_rect(fill = "transparent"), # get rid of legend bg
+    legend.box.background = element_rect(fill = "transparent")) + coord_flip() + ylab("") +xlab("") + theme(axis.text.y = element_text(size=10, family = "serif", face = "bold", colour = "black"), axis.text.x = element_text(size = 10, family = "serif", colour = "black"))  + scale_y_continuous(breaks = seq(from = 0, to = 160, by = 20), expand = expand_scale(mult = c(0,0.1))) +
+  scale_fill_manual(values = c ( 
+    "Synechococcales" = "#7FC97F",
+    "Nostocales" = "#BEAED4",
+    "Chroococcales" = "#FDC086",
+    "Oscillatoriales" = "#FFFF99",
+    "Spirulinales" = "#386CB0",
+    "Pleurocapsales" = "#F0027F",
+    "Chroococcidiopsidales" = "#BF5B17",
+    "Gloeobacterales" = "#666666"))
+  
+        
 
-##ggsave("species_order_disti_plot.png")
+species_order_disti_plot
+ggsave("species_order_disti_plot.png", width = 6, height = 4, dpi = 300)
 ```
-
-#Number of taxa in each Order, optimization in a barplot
-
-```{r}
-species_order_all <- med %>% 
-  filter(Order != "") %>%
-  select(Order, Currentname) %>% 
-  group_by(Order) %>% 
-  summarize(Number_species = n())
-species_order_all
-
-species_order_all_plot <- ggplot(species_order_all, aes(x =reorder(Order, Number_species), y = Number_species, fill = Order )) + geom_bar(stat = "identity") + theme_classic() + theme(legend.position = "none") + geom_text(aes(label = Number_species)) 
-species_order_all_plot + coord_flip() + ylab("Number of records") + xlab("") +
-  scale_fill_manual(values = c (
-"Synechococcales" = "#7FC97F",
-"Nostocales" = "#BEAED4",
-"Chroococcales" = "#FDC086",
-"Oscillatoriales" = "#FFFF99",
-"Spirulinales" = "#386CB0",
-"Pleurocapsales" = "#F0027F",
-"Chroococcidiopsidales" = "#BF5B17",
-"Gloeobacterales" = "#666666"))
-```
-
 
 #Number of taxa in each Family, optimization in a barplot
 
@@ -115,30 +108,38 @@ species_family_all_plot + coord_flip() + ylab("Number of records") + xlab("") +
 
 # Number of distinct taxa in each Family, optimization in a barplot
 
-```{r}
+```{r fig.height = 6, fig.width= 6}
 species_family_disti <- med %>%
-  filter(Family != "") %>% 
+  filter(Family != "" & Family != "Unknown") %>% 
   select(Order, Family, Currentname) %>%
   group_by(Order, Family) %>% 
   summarize(Number_of_species = n_distinct(Currentname)) %>% 
   arrange(desc(Number_of_species))
-species_family_disti <- head(species_family_disti, 20)
-
+species_family_disti <- head(species_family_disti, 19)
+species_family_disti
 
 write.csv(species_family_disti, file = "Taxa_Family.csv")
 
-species_family_disti_plot <- ggplot(species_family_disti, aes(x =reorder(Family, Number_of_species), y = Number_of_species, fill = Order )) + geom_bar(stat = "identity") + theme_classic() + theme(legend.position = "right") + geom_text(aes(label = Number_of_species)) 
-species_family_disti_plot + coord_flip() + ylab("Number of taxa") + xlab("") +
-  scale_fill_manual(values = c (
-"Synechococcales" = "#7FC97F",
-"Nostocales" = "#BEAED4",
-"Chroococcales" = "#FDC086",
-"Oscillatoriales" = "#FFFF99",
-"Spirulinales" = "#386CB0",
-"Pleurocapsales" = "#F0027F",
-"Chroococcidiopsidales" = "#BF5B17",
-"Gloeobacterales" = "#666666"))
-ggsave("species_family_disti_plot.png")
+
+species_family_disti_plot <- ggplot(species_family_disti, aes(x =reorder(Family, Number_of_species), y = Number_of_species, fill = Order )) + geom_bar(stat = "identity", colour = "black", width = 0.7) + theme_classic() + 
+  theme(
+    panel.background = element_rect(fill = "transparent"), # bg of the panel
+    plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
+    panel.grid.major = element_blank(), # get rid of major grid
+    panel.grid.minor = element_blank(), # get rid of minor grid
+    legend.background = element_rect(fill = "transparent"), # get rid of legend bg
+    legend.box.background = element_rect(fill = "transparent")) + coord_flip() + ylab("") + xlab("") + theme(axis.text.y = element_text(size=10, family = "serif", face = "bold", colour = "black"), axis.text.x = element_text(size = 10, family = "serif", colour = "black"))  + theme(legend.title = element_blank(), legend.position = "bottom", legend.text = element_text(color = "black", family  = "serif", size = 10))+ scale_y_continuous(breaks = seq(from = 0, to = 60, by = 10),  expand = expand_scale(mult = c(0,0.1))) +
+  scale_fill_manual(values = c ( 
+    "Synechococcales" = "#7FC97F",
+    "Nostocales" = "#BEAED4",
+    "Chroococcales" = "#FDC086",
+    "Oscillatoriales" = "#FFFF99",
+    "Spirulinales" = "#386CB0",
+    "Pleurocapsales" = "#F0027F",
+    "Chroococcidiopsidales" = "#BF5B17",
+    "Gloeobacterales" = "#666666"))
+species_family_disti_plot
+ggsave("species_family_disti_plot.png", height = 6, width = 6, dpi = 300)
 ```
 
 #Number of  taxa in each Genus, optimization in a barplot
@@ -167,14 +168,15 @@ species_genus_all_plot + coord_flip() + ylab("Number of records") + xlab("") +
 
 #Number of distinct taxa in each Genus, optimization in a barplot
 
-```{r}
+```{r fig.height=6, fig.width=6}
 species_genus_disti <- med %>% 
   filter(Order != "") %>% 
   select(Order, Genustotal, Currentname) %>% 
   group_by(Order, Genustotal) %>% 
   summarize(Number_of_species = n_distinct(Currentname)) %>% 
   arrange(desc(Number_of_species))
-species_genus_disti <- head(species_genus_disti, 28)
+species_genus_disti <- head(species_genus_disti, 27)
+species_genus_disti
 
 write.csv(species_genus_disti, file = "Taxa_genus.csv")
 
@@ -190,36 +192,30 @@ scale_fill_manual(values = c (
 "Pleurocapsales" = "#F0027F",
 "Chroococcidiopsidales" = "#BF5B17",
 "Gloeobacterales" = "#666666"))
-##ggsave("species_genus_disti_plot.png")
+
+species_genus_disti_plot <- ggplot(species_genus_disti, aes(x =reorder(Genustotal, Number_of_species), y = Number_of_species, fill = Order )) + geom_bar(stat = "identity", colour = "black", width = 0.7) + theme_classic() + 
+  theme(
+    panel.background = element_rect(fill = "transparent"), # bg of the panel
+    plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
+    panel.grid.major = element_blank(), # get rid of major grid
+    panel.grid.minor = element_blank(), # get rid of minor grid
+    legend.background = element_rect(fill = "transparent"), # get rid of legend bg
+    legend.box.background = element_rect(fill = "transparent")) + coord_flip() + ylab("") + xlab("") + theme(axis.text.y = element_text(size=10, family = "serif", face = "bold.italic",colour = "black", ), axis.text.x = element_text(size = 10, family = "serif", colour = "black"))  + theme(legend.title = element_blank(), legend.position = "bottom", legend.text = element_text(color = "black", family  = "serif", size = 10))+ 
+  guides(fill=guide_legend(nrow=2,byrow=TRUE)) + 
+  scale_y_continuous(breaks = seq(from = 0, to = 35, by = 5), expand = expand_scale(mult = c(0,0.1))) +
+    scale_fill_manual(values = c ( 
+    "Synechococcales" = "#7FC97F",
+    "Nostocales" = "#BEAED4",
+    "Chroococcales" = "#FDC086",
+    "Oscillatoriales" = "#FFFF99",
+    "Spirulinales" = "#386CB0",
+    "Pleurocapsales" = "#F0027F",
+    "Chroococcidiopsidales" = "#BF5B17",
+    "Gloeobacterales" = "#666666"))
+
+species_genus_disti_plot
+ggsave("species_genus_disti_plot.png", height = 6, width = 6, dpi = 300)
 ```
-
-# Bar chart number of records in each Order
-## Same as the second barplot
-
-```{r}
-med_order <- med %>%
-  filter(Order != "") %>% 
-  select(Order, Family)%>%
-  count(Order, sort = TRUE)
-med_order
-
-
-med_order_bar <- ggplot (med_order, aes(x = reorder(Order, -n), y = n)) + geom_bar(stat = "identity")+
-  theme_classic() + theme(axis.text.x = element_text(angle = 45)) + theme(axis.line = element_line(size = 0.2, 
-    linetype = "solid"), axis.ticks = element_line(colour = "black"), 
-    panel.grid.major = element_line(colour = NA), 
-    panel.grid.minor = element_line(colour = NA), 
-    axis.text = element_text(size = 12, colour = "black"), 
-    panel.background = element_rect(fill = NA), 
-    plot.background = element_rect(colour = NA), 
-    legend.position = "none") +labs(x = NULL, y = NULL) + 
-  theme(axis.text.x = element_text(angle = 45)) +
-  theme(axis.text.x = element_text(vjust = 0.5))+ geom_text(aes(label = n), vjust = 1.6, color = "white", size = 3.5)
-
-med_order_bar
-ggsave("med_order_bar.png")
-```
-
 
 #Taxa found in habitat Reservoir
 
@@ -330,7 +326,7 @@ write.csv(unique_species_count, file = "Unique_species_per_Country.csv")
 
 unique_species_count_plot <- ggplot(unique_species_count, aes(x=reorder(Country, Number_unique_species), y=Number_unique_species, fill = continent)) + geom_bar(stat="identity") + theme_classic() + theme(legend.position = "right") + geom_text(aes(label=Number_unique_species)) + coord_flip() + ylab("Number of taxa") + xlab("")
 unique_species_count_plot
-ggsave("unique_species_count_plot.png")
+#ggsave("unique_species_count_plot.png")
 ```
 
 # Number of taxa in each Country, optimization in barplot
@@ -338,24 +334,39 @@ ggsave("unique_species_count_plot.png")
 ```{r}
 taxa.disti <- med %>%
   filter(Species != "")%>%
-  select(Species, Currentname, Country, continent)%>%
-  group_by(Country, continent)%>%
-  summarize(Taxa_number = n_distinct(Currentname))%>%
-arrange(desc(Taxa_number))
+  select(Title, Currentname, continent)%>%
+  group_by(Title, continent)%>%
+  summarize(Taxa_number = n_distinct(Title))%>%
+arrange(desc(Title))
 taxa.disti
 
 ##write.csv(taxa.disti, file = "Taxa_Country.csv")
 
-taxa.disti.plot <- ggplot(taxa.disti, aes(x=reorder(Country, Taxa_number), y=Taxa_number, fill = continent)) + geom_bar(stat="identity") +
-        theme_classic() + theme(legend.position = "right") + geom_text(aes(label=Taxa_number)) + coord_flip() + ylab("Number of taxa") + xlab("")
+taxa.disti.plot <- ggplot(taxa.disti, aes(x=reorder(continent, Taxa_number), y=Taxa_number, fill = continent)) + geom_bar(stat="identity") +
+        theme_classic() + theme(legend.position = "right") + geom_text(aes(label=Taxa_number)) + coord_flip() + ylab("") + xlab("")
 taxa.disti.plot
-ggsave("taxa.disti.plot.png")
+#ggsave("taxa.disti.plot.png")
 ```
 
 
 
 ```{r}
+title_dist <- med %>% 
+  filter(Order != "") %>% 
+  select(Country, Title) %>% 
+  group_by(Title, Country) %>% 
+  summarize(N = n_distinct("Title")) %>% 
+  arrange(Country)
+title_dist
 
+title_dist_plot <- ggplot(title_dist, aes(x= reorder(Country,-N), y = N)) + geom_bar(stat = "identity")+ geom_text(aes(label = N))
+title_dist_plot
+
+```
+
+
+```{r}
+unique(med$Journal)
 ```
 
 

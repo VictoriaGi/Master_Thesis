@@ -25,16 +25,16 @@ med <- med %>%
 
 
 
-```{r}
+```{r fig.width=10, fig.width=10}
 habi.dist <- dist(med.habi)
 habi.dist.plot <- plot.phylo(as.phylo(hclust(habi.dist)), type="fan", 
-                       label.offset = 0.5, cex = 0.3, xpd=TRUE)
+                       label.offset = 0.5, cex = 1.5, xpd=TRUE)
 
 ```
 
 ```{r fig.height=10}
 habi.dist.horiz <- plot.phylo(as.phylo(hclust(habi.dist)), 
-                       label.offset = 0.5, cex = 0.3, xpd=TRUE)
+                       label.offset = 0.5, cex = 2, xpd=TRUE)
 ```
 
 ```{r}

@@ -69,3 +69,13 @@ ls_split_med %>%
 
 ```
 
+
+```{r fig.height=50, fig.width=10}
+a <- dist(ls_split_med)
+b <- hclust(a, method = "ward.D2")
+
+library(ape)
+plot(as.phylo(b), cex = 0.8, label.offset = 0.25, no.margin = T)
+
+```
+

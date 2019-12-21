@@ -11,13 +11,16 @@ library(tidyverse)
 
 # Import dataset
 # setwd("C:/Users/hp/Desktop/Edit Medit/R_scripts")
-med <- read.csv("../Data/Med_cyano_list_20191003.csv")
+med <- read.csv("../Data/Med_cyano_list_20191024.csv")
 med
 
 # Get unique countries / species
 countries <- unique(med$Country)
 species <- unique(med$Currentname)
-x<- as.data.frame(species)
+x <- as.data.frame(species)
+
+countries
+species
 
 # Code below was used to visualize the for loop which follows
 # greece <- subset(cyanolab, cyanolab$Country == "Greece")
@@ -69,9 +72,6 @@ bubble_plot
 ggsave("bubble_plot.png", dpi=300)
 ```
 
-```{r}
-
-```
 
 
 

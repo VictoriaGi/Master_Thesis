@@ -15,11 +15,12 @@ library(betapart)
 library(tidyverse)
 library(mapproj)
 library(vegan)
+library(stringr)
 ```
 
 
 ```{r}
-med <- read.csv("../Data/Med_cyano_list_20191024.csv", row.names = NULL)
+med <- read.csv("../Data/Med_cyano_list_20191212.csv", row.names = NULL)
 med <- med %>% 
   filter(Med_border == "yes")
 colnames(med)[1] <- "A/A"
@@ -33,6 +34,11 @@ mutate(lat_range = case_when(DD_Lat < 30 ~ "Low", DD_Lat > 30 & DD_Lat < 40 ~ "M
 med
 ```
 
+
+```{r}
+summary(med)
+```
+
 # Dataset with Habitats as rows and taxa as columns
 ## Checking the partitioning beta diversity (turnover + nestedness)
 
@@ -41,7 +47,8 @@ med.habi <- med %>%
   select (Order, Currentname, Habitat, Habitat_type) %>% 
   filter(Order != "") %>% 
   group_by(Habitat, Currentname) %>% 
-  summarize(N = n_distinct(Habitat)) %>% spread(Currentname, N, fill = 0) %>% 
+  summarize(N = n_distinct(Habitat)) %>% 
+  spread(Currentname, N, fill = 0) %>% 
   column_to_rownames("Habitat")
 
 med.habi[med.habi >= 2] <- 1
@@ -56,7 +63,10 @@ med.habi.core
 
 med.habi.core.multij <- beta.multi(med.habi.core, index.family = "jaccard") #bJTU component of turnover
 med.habi.core.multij
+```
 
+
+```{r}
 #Computing the total dissimilarity across all habitats, Sorensen index
 
 med.habi.core.multis <- beta.multi(med.habi.core, index.family = "sorensen")
@@ -82,11 +92,22 @@ lines(density(med.habi.dist$beta.SNE), lty = 1, lwd = 2) + lines(density(med.hab
 
 # Computing the same dissimilarity metrics as above ( can be used e.g. Mantel tests, cluster analysis)
 
-med.habi.pair <- beta.pair(med.habi) # can be impemented in other analyses like cluster
+med.habi.pairs <- beta.pair(med.habi, index.family = "sorensen") # can be impemented in other analyses like cluster
+med.habi.pairs
 
-plot(hclust(med.habi.pair$beta.sim, method = "average"), hang = -1, main = "", sub = "", xlab = "")
-plot(hclust(med.habi.pair$beta.sne, method = "average"), hang = -1, main = "", sub = "", xlab = "")
-plot(hclust(med.habi.pair$beta.sor, method = "average"), hang = -1, main = "", sub = "", xlab = "")
+plot(hclust(med.habi.pairs$beta.sim, method = "average"), hang = -1, main = "", sub = "", xlab = "")
+plot(hclust(med.habi.pairs$beta.sne, method = "average"), hang = -1, main = "", sub = "", xlab = "")
+plot(hclust(med.habi.pairs$beta.sor, method = "average"), hang = -1, main = "", sub = "", xlab = "")
+```
+
+
+```{r}
+med.habi.pairj <- beta.pair(med.habi, index.family = "jaccard")# can be impemented in other analyses like cluster
+med.habi.pairj
+
+plot(hclust(med.habi.pairj$beta.jtu, method = "average"), hang = -1, main = "", sub = "", xlab="")
+plot(hclust(med.habi.pairj$beta.jne, method = "average"), hang = -1, main = "", sub = "", xlab="")
+plot(hclust(med.habi.pairj$beta.jac, method = "average"), hang = -1, main = "", sub = "", xlab="")
 ```
 
 # Dataset with Habitats as rows and taxa as columns -->  Low latitude
@@ -185,7 +206,17 @@ hab.taxa.core <- betapart.core(hab.taxa)
 
 hab.taxa.core.multij <- beta.multi(hab.taxa.core, index.family = "jaccard")
 hab.taxa.core.multij
-hab.taxa.multis <-  beta.multi(hab.taxa.core, index.family = "sorensen")
+hab.taxa.multis <- beta.multi(hab.taxa.core, index.family = "sorensen")
 hab.taxa.multis
+
+```
+
+
+```{r fig.width=10, fig.height=10}
+n <-  betadiver(hab.taxa)
+plot(n)
+```
+```{r}
+
 ```
 

@@ -2,77 +2,278 @@
 title: "diversity_indices"
 author: "Vica"
 date: "10/23/2019"
-output: html_document
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 ```
 
 
-
-```{r}
+```{r include=FALSE, echo=FALSE}
 library(vegan)
 library(tidyverse)
 ```
-```{r}
+
+# Rarefaction with dataset BCI - EXAMPLE
+
+```{r echo=FALSE, include=FALSE}
 data(BCI)
+S <- specnumber(BCI)  # observed number of species
+raremax <- min(rowSums(BCI))
+Srare <- rarefy(BCI, raremax)
+plot(S, Srare, , xlab = "Obs No of species", ylab = "Rarefied number of species") + abline (0, 1)
+rarecurve(BCI, step = 20, sample = raremax, col = "red", cex = 0.6)
+
+
 sha <- diversity(BCI, "simpson")
 H <- diversity(BCI)
 ```
 
+# Accumulation model with dataset BCI - EXAMPLE
 
-```{r}
-med <- read.csv("../Data/Med_cyano_list_20191003.csv")
-colnames(med)[1] <- "A/A"
+```{r echo=FALSE, include=FALSE}
+pool <- poolaccum(BCI)
+summary(pool, display =  "chao")
+plot(pool)
+
+sac <- specaccum(BCI)
+sac
 ```
 
 
+
 ```{r}
+data(BCI)
+opar <- par(mfrow = c(2,2))
+plot(contribdiv(BCI, "richness"), main = "Absolute")
+plot(contribdiv(BCI, "richness", relative = TRUE), main = "Relative")
+plot(contribdiv(BCI, "simpson"))
+plot(contribdiv(BCI, "simpson", relative = TRUE))
+par(opar)
+```
+
+# Insert my dataset
+
+```{r}
+med <- read.csv("../Data/Med_cyano_list_20191024.csv", row.names = NULL)
+med <- med %>% 
+  filter(Med_border == "yes")
+colnames(med)[1] <- "A/A"
+med <- med %>% 
+  mutate(continent = case_when(Country %in% c("Greece", "Italy", "Spain", "France", "Albania", "Montenegro", "Slovenia", "Portugal", "Bulgaria", "Croatia") ~ "Europe",
+                               Country %in% c("Egypt", "Morocco", "Tunisia", "Libya", "Algeria", "Israel","Lebanon") ~ "Africa",Country == "Turkey" ~ "Asia"))
+```
+
+
+```{r }
 species.number <- med %>% 
-  filter(Family != "") %>% 
-  select(Country, Currentname) %>% 
+  filter(Order != "") %>% 
+  select(Order, Country, Currentname) %>% 
   group_by(Country, Currentname) %>% 
   summarize(N = n()) %>% 
-  spread(Currentname, N, fill=0, convert = FALSE, sep = NULL)
+  spread(Currentname, N, fill=0, convert = FALSE, sep = NULL) %>%  column_to_rownames("Country")
+species.number
 
-species.number <- column_to_rownames(species.number, "Country")
+species.number.accum <- specaccum(species.number)
+species.number.accum
 ```
 
 # Shannon-Wiener diversity index for each Country
 
 ```{r}
-species.number.sha <- diversity(species.number)
+species.number.sha <- diversity(species.number, index = "shannon")
+species.number.sha
+species.number.sha <- as.data.frame(species.number.sha)
+species.number.sha
 ```
 
-#Simpson diversity index 1 - D
+# Simpson diversity index 1 - D
 
 ```{r}
 species.number.simp <- diversity(species.number, "simpson")
+species.number.simp
+species.number.simp <- as.data.frame(species.number.simp)
+species.number.simp
 ```
 
-#Simpson index 1/D
+# Simpson diversity index 1/D
 
 ```{r}
 species.number.invsimp <- diversity(species.number, "inv")
+species.number.invsimp <- as.data.frame(species.number.invsimp)
+species.number.invsimp
 ```
 
-# Fisher alpha
+# Unbiased diversity Simpson index
+
+```{r}
+species.number.unbias.simp <- rarefy(species.number, 2) -1
+species.number.unbias.simp
+```
+
+# Fisher diversity
 
 ```{r}
 species.number.alpha <- fisher.alpha(species.number)
+species.number.alpha <- as.data.frame(species.number.alpha)
+species.number.alpha
 ```
 
-#plot diversity indexes in a plot
+# plot diversity indices Shannon, Simpson, Unbiased Simpson, Fisher alpha
 
 ```{r}
 diver_plot <- pairs(cbind(species.number.sha, species.number.simp, species.number.invsimp, species.number.alpha), pch = "+", col ="red")
+
 ```
 
-#Species richness
+# Species richness
 
 ```{r}
-species.number.rich <- specnumber(species.number)
+species.number.rich <- specnumber(species.number, MARGIN = 1)
 species.number.rich
 ```
+
+
+
+```{r include = FALSE, echo=FALSE}
+taxa.number <- med %>% 
+  filter(Family != "") %>% 
+  select(Isolationsource, Currentname) %>% 
+  group_by(Isolationsource, Currentname) %>% 
+  summarize(N = n()) %>% 
+  spread(Currentname, N, fill=0, convert = FALSE, sep = NULL)
+
+taxa.number <- column_to_rownames(taxa.number, "Isolationsource")
+
+
+genus.number <- med %>% 
+  filter(Family != "") %>% 
+  select(Isolationsource, Currentname) %>% 
+  group_by(Isolationsource, Currentname) %>% 
+  summarize(N = n()) %>% 
+  spread(Currentname, N, fill=0, convert = FALSE, sep = NULL)
+
+genus.number <- column_to_rownames(genus.number, "Isolationsource")
+
+
+taxa.number.rich <- specnumber(taxa.number, MARGIN = 1)
+genus.number.rich <- specnumber(genus.number, MARGIN = 1)
+plot(taxa.number.rich, genus.number.rich)
+```
+
+
+
+```{r include=FALSE, echo=FALSE}
+Lat <-med %>% filter(DD_Lat != 0.00) %>% 
+  select(Currentname, DD_Lat) %>% 
+  group_by(DD_Lat) %>% 
+  summarize(N = n()) %>% 
+  arrange(DD_Lat)
+plot(Lat$N, Lat$DD_Lat)
+```
+
+# Contribution diversity approach, based in the differentiation of within-unit and among-unit diversity by using additive diversity partitioning and unit distinctiveness
+
+
+```{r}
+opar <- par(mfrow = c(2,2))
+plot(contribdiv(species.number, "richness", scaled = TRUE), main = "Absolute")
+plot(contribdiv(species.number, "richness", scaled = TRUE, relative = TRUE), main = "Relative")
+plot(contribdiv(species.number, "simpson", scaled = TRUE))
+plot(contribdiv(species.number, "simpson", scaled = TRUE, relative = TRUE))
+par(opar)
+```
+
+
+```{r include=FALSE, echo=FALSE}
+plot(contribdiv(species.number, "richness", scaled = TRUE), main = "Absolute", drop.zero = TRUE)
+```
+
+
+```{r include=FALSE, echo=FALSE}
+plot(contribdiv(species.number, "richness", relative = TRUE, scaled = TRUE), main = "Relative")
+
+```
+
+
+```{r include=FALSE, echo=FALSE}
+species.isolat <- med %>%  select(Currentname, Isolationsource) %>% 
+  filter_all(any_vars(str_detect(., pattern = "Pond"))) %>% 
+  group_by(Isolationsource, Currentname) %>% 
+  summarise(N = n()) %>% 
+  spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) %>% 
+  column_to_rownames("Isolationsource")
+species.isolat
+
+```
+
+
+```{r include=FALSE, echo=FALSE}
+species.isolat.beta.ind <- betadiver(species.isolat, order = TRUE)
+species.isolat.beta.ind
+```
+
+
+```{r}
+med.habi <- med %>% 
+  select (Order, Currentname, Habitat, Habitat_type) %>% 
+  filter(Order != "") %>% 
+  group_by(Habitat, Currentname) %>% 
+  summarize(N = n_distinct(Habitat)) %>% spread(Currentname, N, fill = 0) %>% 
+  column_to_rownames("Habitat")
+
+med.habi[med.habi >= 2] <- 1
+med.habi 
+
+med.habi.j <- betadiver(med.habi, "j")
+med.habi.j
+```
+
+# The 24 beta diversity indices by Koleff et al. 2013 for presence-absence data
+
+```{r}
+betadiver(help = TRUE)
+```
+
+# Whittaker
+
+```{r include = FALSE, echo=FALSE}
+species.isolat.w <- betadiver(species.isolat, "w")
+species.isolat.w
+
+```
+
+
+```{r include = FALSE, echo=FALSE}
+
+species.isolat.3 <- betadiver(species.isolat, "-3")
+species.isolat.3
+```
+
+
+```{r include = FALSE, echo=FALSE}
+
+species.isolat.2 <- betadiver(species.isolat, "-2")
+species.isolat.2
+```
+
+# Jaccard dissimilarity index (the most robust when undersampling occurs, according to Schroeder et al. 2018)
+
+```{r}
+species.isolat.j <- betadiver(species.isolat, "j")
+species.isolat.j
+```
+
+# Cody index, one of the most robust presence-absence based indices, according to Schroeder et al. 2018
+
+```{r}
+species.isolat.c <- betadiver(species.isolat, "c")
+species.isolat.c
+```
+
+
 

@@ -10,10 +10,11 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-```{r}
+```{r include=FALSE}
 library(tidyverse)
 library(factoextra)
 library(FactoMineR)
+library(Hmisc)
 ```
 
 # Taxonomic diversity and taxonomic distinctness 
@@ -29,7 +30,19 @@ med <- med %>%
 ```
 
 
+
+```{r}
+
+describe(med)
+med[!is.na(med),]
+med[complete.cases(med), ]
+
+```
+
+
 # Habitat
+
+
 ```{r}
 med.habi <- med %>% 
   select( Order, Currentname, Habitat) %>% 
@@ -39,6 +52,8 @@ med.habi <- med %>%
   column_to_rownames("Currentname")
 
 med.habi[med.habi >= 2] <- 1
+med.habi <- med.habi[, -1]
+med.habi
 ```
 
 
@@ -54,6 +69,7 @@ fviz_pca_ind(med.habi.pca,
 ```
 
 ## DCA using med.habi
+
 ```{r fig.width=15, fig.height=20}
 med.habi.dca <- decorana(veg = t(med.habi[,-1]))
 # summary(med.habi.dca)

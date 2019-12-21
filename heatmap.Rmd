@@ -11,16 +11,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(tidyverse)
+library(gplots)
 ```
 
 
-```{r}
-df <- scale(mtcars)
-df
-```
 
 ```{r}
-med <- read.csv("../Data/Med_cyano_list_20191024.csv", row.names = NULL)
+med <- read.csv("../Data/Med_cyano_list_20191204.csv", row.names = NULL)
 med <- med %>% 
   filter(Med_border == "yes")
 colnames(med)[1] <- "A/A"
@@ -46,10 +43,15 @@ med.toxins
 
 unique(med.toxins$Currentname)
 med.heat <- med.toxins %>% 
-  select(Currentname,Toxin) %>% 
-  group_by(Currentname, Toxin) %>% 
-  summarize(N = n_distinct("Currentname"))  %>% column_to_rownames("Currentname")
+  select(Country, Toxin) %>% 
+  group_by(Country, Toxin) %>% 
+  summarize(N = n_distinct("Country")) %>%  spread(Toxin, N, fill = 0) %>% column_to_rownames("Country")
+med.heat <- as.matrix(med.heat)
+class(med.heat)
 
+med.heat.scale <- scale(med.heat)
+med.heat
+heatmap.2(med.heat, scale="none",col = bluered(100), trace = "none", density.info = "none")
 ```
 
 # Representing different toxins per habitat

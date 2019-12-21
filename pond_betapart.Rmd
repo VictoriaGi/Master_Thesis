@@ -9,43 +9,61 @@ output:
 ## Get beta diversity
 
 ```{r}
-med <- read.csv("../Data/Med_cyano_list_20191003.csv")
+library(tidyverse)
+library(vegan)
 ```
 
 
 ```{r}
-pond.hab <- med %>%  select(Currentname, Isolationsource) %>% 
-  filter_all(any_vars(str_detect(., pattern = "Pond"))) %>% 
+med <- read.csv("../Data/Med_cyano_list_20191024.csv", row.names = NULL)
+med <- med %>% 
+  filter(Med_border == "yes")
+colnames(med)[1] <- "A/A"
+med <- med %>% 
+  mutate(continent = case_when(Country %in% c("Greece", "Italy", "Spain", "France", "Albania", "Montenegro", "Slovenia", "Portugal", "Bulgaria", "Croatia") ~ "Europe",
+                               Country %in% c("Egypt", "Morocco", "Tunisia", "Libya", "Algeria", "Israel","Lebanon") ~ "Africa",Country == "Turkey" ~ "Asia"))
+```
+
+
+```{r}
+lake.hab <- med %>%  select(Currentname, Isolationsource) %>% 
+  filter_all(any_vars(str_detect(., pattern = "Lake"))) %>% 
   group_by(Isolationsource, Currentname) %>% 
   summarise(N = n()) %>% 
-  spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) 
-pond.hab
+  spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) %>% column_to_rownames("Isolationsource") 
+lake.hab <- lake.hab[, -1]
+```
 
-# Move the specified column (Isolationsource) to rownames
+# Dissimilarity indices for communities - Bray-Curtis
 
-pond.hab <- column_to_rownames(pond.hab, "Isolationsource")
+```{r}
+m <- betadiver(lake.hab)
+plot(m)
+
+lake.dist <- vegdist(lake.hab, method = "bray", binary = TRUE, diag = TRUE, na.rm = TRUE)
+
+```
+
+# Similarity index Jaccard
+
+```{r}
+vegdist(pond.hab, method = "jaccard", binary = TRUE, diag = TRUE, na.rm = TRUE)
+```
 
 
+```{r}
 #Core calculations of betapart
 pond.hab.core <-  betapart.core(pond.hab)
 pond.hab.multi.sor <- beta.multi(pond.hab.core,  index.family = "sorensen")
 pond.hab.multi.jac <- beta.multi(pond.hab.core,  index.family = "jaccard")
+pond.hab.multi.jac
 
-#Resampling multiple-site dissimilarity for n sites
-pond.hab.samp.sor <- beta.sample(pond.hab.core, samples = 100, index.family = "sorensen")
-pond.hab.samp.jac <- beta.sample(pond.hab.core, samples = 100, index.family = "jaccard")
-pond.hab.samp <- beta.sample(pond.hab.core, samples = 100)
 
-#Plot the distribution of components
-dist.pond.hab <- pond.hab.samp$sampled.values 
-plot(density(dist.pond.hab$beta.SOR), xlim = c(0, 3), ylim = c(0,40), xlab = "Beta diversity", main = "", lwd = 3)+
-lines(density(dist.pond.hab$beta.SNE), lty = 1, lwd = 2) + lines(density(dist.pond.hab$beta.SIM), lty = 2, lwd = 2)
 
 pair.pond.hab <- beta.pair(pond.hab)
 plot(hclust(pair.pond.hab$beta.sim, method = "average"), hang = -1, main = "", sub = "", xlab = "")
 plot(hclust(pair.pond.hab$beta.sne, method = "average"), hang = -1, main = "", sub = "", xlab = "")
 plot(hclust(pair.pond.hab$beta.sor, method = "average"), hang = -1, main = "", sub = "", xlab = "")
-
 
 ```
 

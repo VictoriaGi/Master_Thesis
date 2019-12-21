@@ -14,7 +14,7 @@ library(tidyverse)
 
 
 ```{r}
-med <- read.csv("../Data/Med_cyano_list_20191024.csv")
+med <- read.csv("../Data/Med_cyano_list_20191204.csv")
 med <- med %>% 
   filter(Med_border == "yes")
 colnames(med)[1] <- "A/A"
@@ -41,6 +41,7 @@ year <- med %>%
   filter(Order != "") %>% 
   group_by(Year) %>% 
   summarize(Count = n())
+year
 
   #mutate(Year_percent = Title)
 year
@@ -57,7 +58,7 @@ year.barplot<- ggplot(year, aes(x=Year, y = Count, width = .7)) + geom_bar(stat 
   theme(axis.text.x = element_text(angle = 90)) +
   theme(axis.text.x = element_text(vjust = 0.3))
 year.barplot
-ggsave("year_barplot_2.png")
+ggsave("species_count_bar.png")
 
  
 ```
@@ -68,7 +69,7 @@ title_count <- med %>% select(Year, Title) %>%
   summarize(N = n_distinct(Title))
 title_count
 
-title_count_bar <- ggplot(title_count, aes(x=reorder(Year, -N), y = N, width = .7)) + geom_bar(stat = "identity", fill = "green", position = "identity") + theme_classic() + theme(axis.line = element_line(size = 0.2, 
+title_count_bar <- ggplot(title_count, aes(x=Year, y = N, width = .7)) + geom_bar(stat = "identity", fill = "green", position = "identity") + theme_classic() + theme(axis.line = element_line(size = 0.2, 
     linetype = "solid"), axis.ticks = element_line(colour = "black"), 
     panel.grid.major = element_line(colour = NA), 
     panel.grid.minor = element_line(colour = NA), 

@@ -6,39 +6,23 @@ output:
 ---
 
 
-# Library path manually
-```{r}
-mypaths <- .libPaths()
-mypaths <- c(mypaths, "C:/Program Files/R/R-3.6.1/library")
-.libPaths(mypaths)
-```
 
-
-```{r}
+```{r echo=FALSE, include=FALSE}
 library(tidyverse)
 library(betapart)
 ```
 
 ```{r}
-med <- read.csv("../Data/Med_cyano_list_20191003.csv")
-med
-```
-
-# Change the name of column 1
-
-```{r}
+med <- read.csv("../Data/Med_cyano_list_20191204.csv", row.names = NULL)
+med <- med %>% 
+  filter(Med_border == "yes")
 colnames(med)[1] <- "A/A"
-med
+med <- med %>% 
+  mutate(continent = case_when(Country %in% c("Greece", "Italy", "Spain", "France", "Albania", "Montenegro", "Slovenia", "Portugal", "Bulgaria", "Croatia") ~ "Europe",
+                               Country %in% c("Egypt", "Morocco", "Tunisia", "Libya", "Algeria", "Israel","Lebanon") ~ "Africa",Country == "Turkey" ~ "Asia"))
 ```
 
-```{r}
-str(med)
-length(med$Genus)
-glimpse(med)
-length(unique(med$Currentname))
-```
-
-#Split countries and get the unique taxa and Isolationsources for each of them
+#Split habitat types and get Currentname in each of them
 
 ```{r}
 s <- split(med, med$Habitat_type)
@@ -47,8 +31,7 @@ s
 couiso_unique <- sapply(s, function(x){
   unique(x["Currentname"])
 })
-couiso_unique <- couiso_unique
-
+couiso_unique
 ```
 
 # Select only habitat Pond and spread function
@@ -59,16 +42,14 @@ pondbeta <- med %>%  select(Currentname, Isolationsource) %>%
   filter_all(any_vars(str_detect(., pattern = "Pond"))) %>% 
   group_by(Isolationsource, Currentname) %>% 
   summarise(N = n()) %>% 
-  spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) 
+  spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) %>% column_to_rownames("Isolationsource")
 pondbeta
-summary(pondbeta)
 
 
-#beta diversity
-library(betapart)
+## Beta diversity between the same habitat, Pond
 pondbetapart <- pondbeta
 pondbetapart[pondbetapart >= 1] <- 1
-pondbetapart <- betapart.core(pondbetapart[, -1])
+pondbetapart <- betapart.core(pondbetapart)
 pondbetapart
 
 
@@ -81,8 +62,6 @@ pondbetapart_multi_jac
 
 pondbetapart_multi_sor <- beta.multi(pondbetapart, index.family = "sor")
 pondbetapart_multi_sor
-
-
 ```
 
 # Select only habitat Lake and use the spread function
@@ -93,19 +72,16 @@ lakebeta <- med %>%  select(Currentname, Isolationsource) %>%
   filter_all(any_vars(str_detect(., pattern = "Lake"))) %>% 
   group_by(Isolationsource, Currentname) %>% 
   summarise(N = n()) %>% 
-  spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) 
+  spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) %>% column_to_rownames("Isolationsource")
 #lakebeta <- lakebeta[, -2]
 lakebeta
-summary(lakebeta)
 
-
-#beta diversity
-library(betapart)
-  
 lakebetapart <- lakebeta
 lakebetapart[lakebetapart >= 1] <- 1
-lakebetapart <- betapart.core(lakebetapart[, -1])
-lakebetapart
+lakebetapart <-lakebetapart[,-1]
+
+lakebetapart <- betapart.core(lakebetapart)
+
 
 # Computing multiple-site dissimilarities, with Jaccard and Sorensen indexes
 lakebetapart_multi_jac <- beta.multi(lakebetapart, index.family = "jac")
@@ -124,20 +100,21 @@ resebeta <- med %>%  select(Currentname, Isolationsource) %>%
   filter_all(any_vars(str_detect(., pattern = "Reservoir"))) %>% 
   group_by(Isolationsource, Currentname) %>% 
   summarise(N = n()) %>% 
-  spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) 
+  spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) %>% column_to_rownames("Isolationsource")
 #lakebeta <- lakebeta[, -2]
 resebeta
-summary(resebeta)
-str(resebeta)
-
-
-#beta diversity
-library(betapart)
   
 resebetapart <- resebeta
 resebetapart[resebetapart >= 1] <- 1
-resebetapart <- betapart.core(resebetapart[, -1])
+resebetapart <- betapart.core(resebetapart)
 resebetapart
+
+# Computing multiple-site dissimilarities, with Jaccard and Sorensen indexes
+resebetapart_multi_jac <- beta.multi(resebetapart, index.family = "jac")
+lakebetapart_multi_jac
+
+resebetapart_multi_sor <- beta.multi(resebetapart, index.family = "sor")
+resebetapart_multi_sor
 ```
 
 
@@ -147,31 +124,33 @@ rivbeta <- med %>%  select(Currentname, Isolationsource) %>%
   filter_all(any_vars(str_detect(., pattern = "River"))) %>% 
   group_by(Isolationsource, Currentname) %>% 
   summarise(N = n()) %>% 
-  spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) 
-#lakebeta <- lakebeta[, -2]
+  spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) %>% column_to_rownames("Isolationsource")
+rivbeta <- rivbeta[, -1]
 rivbeta
 
-#beta diversity
-library(betapart)
   
 rivbetapart <- rivbeta
-#resebetapart[resebetapart >= 1] <- 1
-rivbetapart <- betapart.core(rivbetapart[, -1])
-rivbetapart
+rivbetapart[rivbetapart >= 1] <- 1
+rivbetapart <- betapart.core(rivbetapart)
+
+rivbetapart_multi_jac <- beta.multi(rivbetapart, index.family = "jac")
+rivbetapart_multi_jac
+
+## Save the list in a csv file
+capture.output(rivbetapart, file = "rivbetapart.csv")
 ```
+
+
 
 ```{r}
 streambeta <- med %>%  select(Currentname, Isolationsource) %>% 
   filter_all(any_vars(str_detect(., pattern = "Stream"))) %>% 
   group_by(Isolationsource, Currentname) %>% 
   summarise(N = n()) %>% 
-  spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) 
+  spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) %>%  column_to_rownames("Isolationsource") 
 #lakebeta <- lakebeta[, -2]
 streambeta
 
-
-#beta diversity
-library(betapart)
   
 streambetapart <- streambeta
 streambetapart[streambetapart >= 1] <- 1
@@ -186,12 +165,19 @@ streambetapart_multi_sor <- beta.multi(streambetapart, index.family = "sor")
 streambetapart_multi_sor
 ```
 
-# Alpha diversity of habitat pond
+# Alpha diversity of habitats
 
 ```{r}
-library(dplyr)
-library(tidyverse)
+habspec<- med %>%  
+  select(Currentname, Isolationsource, Order) %>% 
+  filter(Order != "") %>% 
+  group_by(Isolationsource) %>% 
+  summarise(N = n()) %>% 
+  arrange(desc(N))
+habspec
+```
 
+```{r}
 pondspr<- med %>%  select(Currentname, Isolationsource) %>% 
   filter_all(any_vars(str_detect(., pattern = "Pond"))) %>% 
   group_by(Isolationsource, Currentname) %>% 
@@ -215,16 +201,6 @@ lakespr
 apply(lakespr[, -1] > 0, 2, sum)
 ```
 
-# Menhinick's index is simply the number of species (n) divided by the square-root of the total number of individuals (N).   D=n/√N
-
-
-
-```{r}
-n <- apply(lakespr[, -1]>0, 2, sum)
-N <- apply(lakespr[, -1]>0, 2, sum)
-Mehi <- n/sqrt(N)
-Mehi
-```
 
 # Menhinick's index is simply the number of species (n) divided by the square-root of the total number of individuals (N).   D=n/√N
 
@@ -243,6 +219,7 @@ N <- apply(pondspr[,-1]>0, 2, sum)
 Margal <- (n-1)/log(N)
 Margal
 ```
+
 
 
 ```{r}
@@ -276,6 +253,8 @@ j <- beta.multi(sore_pa[,-1], index.family = "jaccard")
 j
 ```
 
+
+
 ```{r}
 sore <- med %>% select(Isolationsource, Currentname, Order) %>% 
   filter(Order != " ") %>% 
@@ -294,9 +273,43 @@ beta.pair(sore_pair[, -1], index.family = "jaccard")
 beta.sample(sore_pair[,-1], index.family = "sorensen", samples = 10)
 ```
 
+
 ```{r}
-require(dismo)
+hab_taxa <- med %>%  filter(Order != "") %>% 
+  select(Currentname, Habitat_source) %>% 
+  group_by(Currentname, Habitat_source) %>% 
+  summarize(N=n()) %>% 
+  spread(Currentname, N, fill = 0, convert = FALSE, sep = NULL) %>% column_to_rownames("Habitat_source")
+hab_taxa[hab_taxa>1] <- 1
+hab_taxa
+glimpse(hab_taxa)
+
+beta.pair(hab_taxa, index.family = "jaccard")
+
+
+hab_taxa_dist <- dist(hab_taxa,method = "binary", diag = TRUE)
+hab_taxa_clust <- hclust(hab_taxa_dist, method = "average")
+plot(hab_taxa_clust)
+
+hab_taxa_clust2 <- hclust(hab_taxa_dist, method = "complete")
+plot(hab_taxa_clust2)
+
+hab_taxa_clust3 <- hclust(hab_taxa_dist, method = "ward.D")
+plot(hab_taxa_clust3)
+
+hab_taxa_clust3 <- hclust(hab_taxa_dist, method = "ward.D2")
+plot(hab_taxa_clust3)
+
+
+hab_taxa_clust5 <- hclust(hab_taxa_dist, method = "single")
+plot(hab_taxa_clust5)
+
+unique(med$Currentname)
+unique(med$Family)
+unique(med$Genustotal)
 ```
+
+
 
 
 
