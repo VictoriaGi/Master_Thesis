@@ -1,0 +1,69 @@
+---
+title: "a-diversity_latitude"
+author: "Vica"
+date: "11/2/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo = FALSE, include=FALSE}
+install.packages("otuSummary")
+```
+
+
+```{r}
+library(tidyverse)
+library(otuSummary)
+```
+
+
+
+```{r}
+med <- read.csv("../Data/Med_cyano_list_20191024.csv", row.names = NULL)
+med <- med %>% 
+  filter(Med_border == "yes")
+colnames(med)[1] <- "A/A"
+med <- med %>% 
+  mutate(continent = case_when(Country %in% c("Greece", "Italy", "Spain", "France", "Albania", "Montenegro", "Slovenia", "Portugal", "Bulgaria", "Croatia") ~ "Europe",
+                               Country %in% c("Egypt", "Morocco", "Tunisia", "Libya", "Algeria", "Israel","Lebanon") ~ "Africa",Country == "Turkey" ~ "Asia"))
+```
+
+# Split DD_Lat into 3 range fields
+
+```{r}
+med <- med %>% 
+mutate(lat_range = case_when(DD_Lat < 30 ~ "Low", DD_Lat > 30 & DD_Lat < 40 ~ "Medium",
+                             DD_Lat > 40 ~ "High"))
+```
+
+
+
+```{r}
+taxa_lat <- med %>% select(Order,Currentname, lat_range, Country, Isolationsource) %>% 
+  filter (Order != "") %>% 
+  group_by(lat_range, Country,Isolationsource) %>% 
+  summarize(N = n_distinct(Currentname)) %>% 
+  arrange(desc(N))
+taxa_lat
+
+taxa_lat_plot <- ggplot(taxa_lat, aes(x = lat_range, y = N), fill = Country) + geom_bar(stat = "identity")
+taxa_lat_plot
+```
+
+
+
+```{r}
+species.number <- med %>% 
+  filter(Order != "") %>% 
+  select(Order, DD_Lat, Currentname) %>% 
+  group_by(DD_Lat, Currentname) %>% 
+  summarize(N = n_distinct(Currentname)) %>% 
+  spread(Currentname, N, fill=0, convert = FALSE, sep = NULL)
+
+species.number <- column_to_rownames(species.number, "DD_Lat")
+species.number
+```
+

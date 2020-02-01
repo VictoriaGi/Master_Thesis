@@ -23,7 +23,7 @@ library(splitstackshape)
 
 
 ```{r}
-med <- read.csv("../Data/Med_cyano_list_20191212.csv", row.names = NULL)
+med <- read.csv("../Data/Medcyanolist_source_20200130.csv", row.names = NULL)
 med <- med %>% 
   filter(Med_border == "yes")
 colnames(med)[1] <- "A/A"
@@ -63,9 +63,12 @@ ls_split_med <- ls_split %>%
   column_to_rownames("Currentname")
 
 ls_split_med
+lifestyle_spread <- write.csv(ls_split_med, file = "lifestyle_spread.csv", sep = ",")
+read.csv("lifestyle_spread.csv")
 
 ls_split_med %>% 
   colSums()
+colnames(ls_split_med)
 
 ```
 
@@ -77,5 +80,10 @@ b <- hclust(a, method = "ward.D2")
 library(ape)
 plot(as.phylo(b), cex = 0.8, label.offset = 0.25, no.margin = T)
 
+```
+
+
+```{r}
+ls()
 ```
 

@@ -1,0 +1,62 @@
+---
+title: "ggmap_test"
+output: html_notebook
+---
+
+
+
+```{r}
+library(ggmap)
+?register_google
+```
+
+```{r}
+location <- c(left = -15, bottom = 23, right = 40, top = 50)
+getmap <- get_stamenmap(location , zoom = 5, maptype = "toner-lite") %>% ggmap()
+getmap
+
+```
+```{r}
+data(hadley)
+hadley
+
+ggimage(hadley)
+ggimage(hadley, coord_equal = FALSE)
+x <- seq(1, 438, 15); n <- length(x)
+df <- data.frame(x = x, y = -(120*(scale((x - 219)^3 - 25000*x) + rnorm(n)/2 - 3)))
+qplot(x, y, data = df, geom = c('smooth','point'))
+ggimage(hadley, fullpage = FALSE) +
+geom_smooth(aes(x = x, y = y), fill = I('gray60'), data = df,
+colour = I('green'), size = I(1)) +
+geom_point(aes(x = x, y = y), data = df,
+colour = I('green'), size = I(3), fill = NA)
+```
+
+
+```{r}
+lon_range <- extendrange(med$DD_Long)
+lat_range <- extendrange(med$DD_Lat)
+calc_zoom(lon_range, lat_range)
+```
+```{r}
+gc <- geocode("location")
+LonLat2XY(med$DD_Lat, med$DD_Long, 10)
+```
+
+
+```{r}
+lon <- sample(med$DD_Long, 10)
+lat <- sample(med$DD_Lat, 10)
+make_bbox(lon,lat)
+make_bbox(lon,lat, f = .10)
+```
+
+```{r}
+location <- c(left = -15, bottom = 23, right = 40, top = 50)
+qmap(location, zoom = 10, maptype = "hybrid")
+```
+
+```{r}
+qmplot(med$DD_Long,med$DD_Lat,  med, zoom = 5, legend = "none", mapcolor = "bw")
+```
+

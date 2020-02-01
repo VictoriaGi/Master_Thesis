@@ -1,0 +1,42 @@
+---
+title: "checklist"
+author: "Vica"
+date: "2/1/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+med <- read.csv("../Data/Medcyanolist_source_20200130.csv")
+med <- med %>% 
+  filter(Order != "" & Med_border == "yes") 
+colnames(med)[1] <- "A/A"
+med <- med %>% 
+  mutate(continent = case_when(Country %in% c("Greece", "Italy", "Spain", "France", "Albania", "Montenegro", "Slovenia", "Portugal", "Bulgaria", "Croatia") ~ "Europe",
+                               Country %in% c("Egypt", "Morocco", "Tunisia", "Libya", "Algeria", "Israel","Lebanon") ~ "Africa",Country == "Turkey" ~ "Asia"))
+
+med <- med %>% 
+mutate(lat_range = case_when(DD_Lat < 30 ~ "Low", DD_Lat > 30 & DD_Lat < 40 ~ "Medium",
+                             DD_Lat > 40 ~ "High"))
+med
+```
+
+
+```{r}
+species_list <- med %>%
+  select(Order, Family, Species, Currentname, Reference, Year, YearOrder) %>% 
+  group_by(Currentname) %>% 
+  filter(Year==min(Year)) %>% 
+  distinct()
+  
+species_list
+```
+

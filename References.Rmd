@@ -1,0 +1,83 @@
+---
+title: "References"
+author: "Vica"
+date: "10/27/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+```
+
+
+```{r}
+med <- read.csv("../Data/Medcyanolist_source_20200130.csv", row.names = NULL)
+med <- med %>% 
+  filter(Med_border == "yes")
+colnames(med)[1] <- "A/A"
+med <- med %>% 
+  mutate(continent = case_when(Country %in% c("Greece", "Italy", "Spain", "France", "Albania", "Montenegro", "Slovenia", "Portugal", "Bulgaria", "Croatia") ~ "Europe",
+                               Country %in% c("Egypt", "Morocco", "Tunisia", "Libya", "Algeria", "Israel","Lebanon") ~ "Africa",Country == "Turkey" ~ "Asia"))
+med
+```
+
+```{r}
+med %>% 
+  select(Country, Title, Order) %>% 
+  filter(Order != "") %>% 
+  group_by(Country, Title) %>% 
+  summarize(N = n_distinct("Title"))
+```
+
+
+
+```{r}
+refe_per_country <- med %>% select(Year, Title, Country, continent) %>% 
+  group_by(Country, continent) %>% 
+  summarize(N = n_distinct(Title))
+refe_per_country
+
+
+refe_per_country_bar <- ggplot(refe_per_country, aes(x=reorder(Country, -N), y = N, width = .7, fill = continent)) + geom_bar(stat = "identity", position = "identity") + theme_classic()  + theme(axis.line = element_line(size = 0.2, 
+    linetype = "solid"), axis.ticks = element_line(colour = "black"), 
+    panel.grid.major = element_line(colour = NA), 
+    panel.grid.minor = element_line(colour = NA), 
+    axis.text = element_text(size = 12, colour = "black"), 
+    panel.background = element_rect(fill = "transparent"), 
+    plot.background = element_rect(fill = "transparent", color = NA), 
+    legend.position = "none") +labs(x = NULL, y = NULL) + 
+  theme(axis.text.x = element_text(angle = 90)) +
+  theme(axis.text.x = element_text(vjust = 0.5)) + 
+  xlab("Country") + ylab("Number of references")+
+  theme(axis.title = element_text(size = 16))
+refe_per_country_bar
+#ggsave("refe_per_country_bar.png")
+```
+
+
+
+```{r}
+refe_per_country <- med %>% select(Year, Title, Country) %>% 
+  group_by(Country, Year) %>% 
+  summarize(N = n_distinct(Title))
+refe_per_country
+
+
+refe_per_country_year_bar <- ggplot(refe_per_country, aes(x=Year, y = N, width = .7)) + geom_bar(stat = "identity", fill = "blue", position = "identity") + theme_classic() + theme(axis.line = element_line(size = 0.2, 
+    linetype = "solid"), axis.ticks = element_line(colour = "black"), 
+    panel.grid.major = element_line(colour = NA), 
+    panel.grid.minor = element_line(colour = NA), 
+    axis.text = element_text(size = 12, colour = "black"), 
+    panel.background = element_rect(fill = NA), 
+    plot.background = element_rect(colour = NA), 
+    legend.position = "none") +labs(x = NULL, y = NULL) + 
+  theme(axis.text.x = element_text(angle = 90)) +
+  theme(axis.text.x = element_text(vjust = 0.5)) + 
+  xlab("Country") + ylab("Number of references")  #+ facet_wrap(~ Country)
+refe_per_country_year_bar
+ggsave("refe_per_country_year_bar.png")
+```

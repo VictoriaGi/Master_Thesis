@@ -9,15 +9,27 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
 ```{r}
+install.packages("rlang")
+install.packages("tidyverse")
+library(rlang)
+```
+
+
+```{r}
+library(rlang)
 library(tidyverse)
-library(gplots)
+
+library(dplyr)
+library(ggplot2)
+library(tidyr)
 ```
 
 
 
 ```{r}
-med <- read.csv("../Data/Med_cyano_list_20191204.csv", row.names = NULL)
+med <- read.csv("../Data/Medcyanolist_source_20200130.csv", row.names = NULL)
 med <- med %>% 
   filter(Med_border == "yes")
 colnames(med)[1] <- "A/A"

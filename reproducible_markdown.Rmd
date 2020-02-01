@@ -1,0 +1,15 @@
+My First Rmarkdownfile
+
+This is my first Rmarkdown file.
+
+```{r}
+library(datasets)
+data(airquality)
+summary(airquality)
+```
+
+Let's first make a pairs plot of the data.
+
+```{r}
+pairs(airquality)
+```

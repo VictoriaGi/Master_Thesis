@@ -20,9 +20,9 @@ library(stringr)
 
 
 ```{r}
-med <- read.csv("../Data/Med_cyano_list_20191212.csv", row.names = NULL)
+med <- read.csv("../Data/Medcyanolist_source_20200130.csv", row.names = NULL)
 med <- med %>% 
-  filter(Med_border == "yes")
+  filter(Order != "" & Med_border == "yes") 
 colnames(med)[1] <- "A/A"
 med <- med %>% 
   mutate(continent = case_when(Country %in% c("Greece", "Italy", "Spain", "France", "Albania", "Montenegro", "Slovenia", "Portugal", "Bulgaria", "Croatia") ~ "Europe",
@@ -32,6 +32,17 @@ med <- med %>%
 mutate(lat_range = case_when(DD_Lat < 30 ~ "Low", DD_Lat > 30 & DD_Lat < 40 ~ "Medium",
                              DD_Lat > 40 ~ "High"))
 med
+```
+```{r}
+unique(med$Order)
+unique(med$Family)
+unique(med$Currentname)
+unique(med$Journal)
+unique(med$Habitat_source)
+unique(med$Habitat_type)
+
+levels(med$Order)
+
 ```
 
 
@@ -44,12 +55,12 @@ summary(med)
 
 ```{r}
 med.habi <- med %>% 
-  select (Order, Currentname, Habitat, Habitat_type) %>% 
+  select (Order, Currentname, Habitat_type) %>% 
   filter(Order != "") %>% 
-  group_by(Habitat, Currentname) %>% 
-  summarize(N = n_distinct(Habitat)) %>% 
+  group_by(Habitat_type, Currentname) %>% 
+  summarize(N = n_distinct(Habitat_type)) %>% 
   spread(Currentname, N, fill = 0) %>% 
-  column_to_rownames("Habitat")
+  column_to_rownames("Habitat_type")
 
 med.habi[med.habi >= 2] <- 1
 med.habi 
