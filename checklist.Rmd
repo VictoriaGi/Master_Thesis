@@ -36,7 +36,22 @@ species_list <- med %>%
   group_by(Currentname) %>% 
   filter(Year==min(Year)) %>% 
   distinct()
+write.csv(species_list, "checklist_cyano.csv")
   
 species_list
+```
+
+#species with Unknown Family
+
+```{r}
+unknown_list <- med %>%
+  select(Order, Family, Species, Currentname, Reference, Year, YearOrder) %>% 
+  filter(Family == "Unknown") %>% 
+  group_by(Currentname) %>% 
+  filter(Year==min(Year)) %>% 
+  distinct()
+write.csv(unknown_list, "unknown_family.csv")
+  
+unknown_list
 ```
 
