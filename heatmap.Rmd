@@ -15,12 +15,6 @@ install.packages("rlang")
 install.packages("tidyverse")
 install.packages(c("hrbrthemes", "viridis", "plotly", "d3heatmap"))
 install.packages("heatmaply")
-install.packages("mapDiversity")
-```
-
-
-```{r}
-
 ```
 
 
@@ -60,8 +54,23 @@ colnames(med.toxins)[1] <- "A/A"
 med.toxins
 ```
 
-```{r}
+##HEATMAP with ggplot2-function geom_tile
 
+
+```{r}
+med.heat.1 <- med.toxins %>% 
+  select(Country, Toxin) %>% 
+  group_by(Country, Toxin) %>% 
+  summarize(N = n()) 
+med.heat.1
+
+test <- unlist(med.heat.1$Country)
+
+## package ggplot2-function geom_tile
+
+med.heat.1.country <- ggplot(med.heat.1, aes(x = Toxin, y = Country, fill = test)) + geom_tile() + 
+  scale_fill_distiller(palette = "RdGy") 
+med.heat.1.country
 ```
 
 
@@ -95,26 +104,34 @@ map <- heatmap.2(med.heat, scale="none",col = bluered(100), trace = "none", dens
 ```
 
 
-#Package gplots Currentname-Toxin
+##HEATMAP using package gplots Currentname-Toxin
 
-```{r height = 10, width = 15 }
+```{r }
 med.heat.spe <- med.toxins %>% 
   select(Currentname, Country, Toxin) %>% 
   group_by(Currentname,Toxin) %>% 
-  summarize(N = n_distinct("Currentname")) %>%  spread(Toxin, N, fill = 0) %>% column_to_rownames("Currentname")
+  summarize(N = n_distinct("Currentname")) %>% spread(Toxin, N, fill = 0) %>% column_to_rownames("Currentname")
 med.heat.spe <- as.matrix(med.heat.spe)
-class(med.heat.spe)
 med.heat.spe
 
+
+
 med.heat.scale.spe <- scale(med.heat.spe)
-med.heat.scale.spe
+
 map.spe <- heatmap.2(med.heat.spe, 
-                     dendrogram = "row", 
+                     dendrogram = "both",
+                     key = TRUE,
+                     cexRow = 0.5,
+                     cexCol = 0.9,
+                     margins = c(8,9),
+                     srtRow=0, srtCol=45, offsetRow=-0.5, offsetCol=-0.5,
                      scale="none",
-                     col = bluered(50), 
+                     distfun = dist,
+                     col = c("green","red"),
                      sepcolor = "white",
                      sepwidth = c(0.05,0.05),
-                     trace = "none", density.info = "none")
+                     trace = "none", density.info = "none"
+                     )
 
 ```
 
