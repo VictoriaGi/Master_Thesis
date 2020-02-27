@@ -1,0 +1,93 @@
+---
+title: "bdvis_test"
+author: "Vica"
+date: "2/27/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+install.packages("bdvis")
+install.packages("d3Tree")
+install.packages("rlang")
+```
+
+
+```{r}
+ap <- available.packages()
+"d3TreeR" %in% rownames(ap)
+```
+
+
+```{r}
+library(tidyverse)
+library(bdvis)
+library(treemap)
+library(d3Tree)
+library(rlang)
+```
+
+
+```{r}
+med <- read.csv("../Data/Medcyanolist_source_20200130_yes.csv")
+med <- med %>% 
+  filter(Med_border == "yes")
+colnames(med)[1] <- "A/A"
+med <- med %>% 
+  mutate(continent = case_when(Country %in% c("Greece", "Italy", "Spain", "France", "Albania", "Montenegro", "Slovenia", "Portugal", "Bulgaria", "Croatia") ~ "Europe",
+                               Country %in% c("Egypt", "Morocco", "Tunisia", "Libya", "Algeria", "Israel","Lebanon") ~ "Africa",Country == "Turkey" ~ "Asia"))
+
+med <- med %>% 
+mutate(lat_range = case_when(DD_Lat < 30 ~ "Low", DD_Lat > 30 & DD_Lat < 40 ~ "Medium",
+                             DD_Lat > 40 ~ "High"))
+med
+```
+
+
+```{r}
+med.treemap <- med %>% 
+  select(Order, Family, Genustotal, Currentname) %>% 
+  group_by(Order) %>% 
+  summarize()
+med.treemap
+med.treemap.plot <- taxotree(med.treemap, title = 'Taxonomic treemap', sum1 = "Family", sum2 = "Genustotal")
+```
+
+
+```{r fig.height=5, fig.width=9}
+med$Order <- as.character(med$Order)
+med$Family <- as.character(med$Family)
+
+med.t <- med %>% 
+  filter(Order != "") %>% 
+  select(Order, Family, Genustotal, Currentname) %>% 
+  group_by(Order, Family, Genustotal) %>% 
+  summarize(N = n_distinct("Genustotal"))
+med.t
+
+##palette.HCL.options <- list(hue_start=270, hue_end=360+150)
+
+png(name = "taxon_treemap.png", width = 7, height = 5)
+treemap(med.t, index = c("Order", "Family"),
+        vSize = "N",
+        force.print.labels = TRUE,
+        vColor = "Genustotal",
+        #type = "index",
+        fontsize.labels=c(14,12),
+        align.labels = list(c("center", "bottom"),
+                            c("right", "top")),
+        overlap.labels=0.8,
+        fontfamily.labels = "serif",
+        bg.labels=c("transparent"),
+        fontface.labels=c(2,1),
+        border.col = "white",
+        #algorithm = "pivotSize",
+        palette="Set2")
+dev.off()
+
+````
+
+
