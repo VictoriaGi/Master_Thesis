@@ -22,8 +22,7 @@ library(vegan)
 # Insert csv file and filter only countries included in the Mediterranean region
 
 ```{r, echo = FALSE, include=FALSE}
-
-med <- read.csv("../Data/Med_cyano_list_20191204.csv", row.names = NULL)
+med <- read.csv("../Data/Medcyanolist_source_20200130.csv", row.names = NULL)
 med <- med %>% 
   filter(Med_border == "yes")
 colnames(med)[1] <- "A/A"

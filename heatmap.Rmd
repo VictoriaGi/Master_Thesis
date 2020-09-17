@@ -2,20 +2,15 @@
 title: "heatmap"
 author: "Vica"
 date: "11/6/2019"
-output: html_document
+output:
+  html_document: default
+  word_document: default
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-
-```{r}
-install.packages("rlang")
-install.packages("tidyverse")
-install.packages(c("hrbrthemes", "viridis", "plotly", "d3heatmap"))
-install.packages("heatmaply")
-```
 
 
 ```{r}
@@ -23,11 +18,15 @@ library(tidyverse)
 library(hrbrthemes)
 library(viridis)
 library(plotly)
-library(d3heatmap)
 library(heatmaply)
 library(RColorBrewer)
 library(gplots)
+library(vegan)
+```
 
+```{r}
+ap <- available.packages()
+"d3TreeR" %in% rownames(ap)
 ```
 
 
@@ -54,23 +53,24 @@ colnames(med.toxins)[1] <- "A/A"
 med.toxins
 ```
 
+
 ##HEATMAP with ggplot2-function geom_tile
 
 
 ```{r}
-med.heat.1 <- med.toxins %>% 
-  select(Country, Toxin) %>% 
-  group_by(Country, Toxin) %>% 
-  summarize(N = n()) 
-med.heat.1
+#med.heat.1 <- med.toxins %>% 
+  #select(Country, Toxin) %>% 
+  #group_by(Country, Toxin) %>% 
+  #summarize(N = n()) 
+#med.heat.1
 
-test <- unlist(med.heat.1$Country)
+#test <- unlist(med.heat.1$Country)
 
 ## package ggplot2-function geom_tile
 
-med.heat.1.country <- ggplot(med.heat.1, aes(x = Toxin, y = Country, fill = test)) + geom_tile() + 
-  scale_fill_distiller(palette = "RdGy") 
-med.heat.1.country
+#med.heat.1.country <- ggplot(med.heat.1, aes(x = Toxin, y = Country, fill = test)) + geom_tile() + 
+  #scale_fill_distiller(palette = "RdGy") 
+#med.heat.1.country
 ```
 
 
@@ -106,7 +106,8 @@ map <- heatmap.2(med.heat, scale="none",col = bluered(100), trace = "none", dens
 
 ##HEATMAP using package gplots Currentname-Toxin
 
-```{r fig.height=6, fig.width=10}
+
+```{r fig.height=6, fig.width=8, echo=FALSE}
 med.heat.spe <- med.toxins %>% 
   select(Currentname, Country, Toxin) %>% 
   group_by(Currentname,Toxin) %>% 
@@ -114,31 +115,116 @@ med.heat.spe <- med.toxins %>%
   spread(Toxin, N, fill = 0) %>% 
   column_to_rownames("Currentname")
 med.heat.spe <- as.matrix(med.heat.spe) ## Μετατροπή του dataframe σε matrix
-med.heat.spe
+#med.heat.spe
 
 
 ##med.heat.scale.spe <- scale(med.heat.spe) 
-#png("../Results/heatmap.2.png", width=1000, height=500)
+tiff("../Results/heatmap.2.tiff", res = 300, units = "in",  width=7, height=6)
 
-map.spe <- heatmap.2(med.heat.spe, 
+map.spe <- heatmap.2(med.heat.spe,
                      dendrogram = "both",
                      key = TRUE,
-                     cexRow = 0.65,
+                     #keysize = 1.5,
+                     cexRow = 0.64,
                      cexCol = 0.8,
                      margins = c(6,10),
                      srtRow=0, srtCol=45, offsetRow=-0.5, offsetCol=-0.5,
                      scale="none",
-                     distfun = dist,
-                     sepcolor = "black",
+                     #distfun = dist,
+                     sepcolor = "white",
                      col = c("#66c2a5", "#fc8d62"),
-                     #lwid = c(0.04,0.08),
+                     lwid = c(0.8,1),
                      lhei=c(0.05, 0.2 ),
                      labRow=as.expression(lapply(rownames(med.heat.spe), function(a) bquote(italic(.(a))))),
                      sepwidth = c(1,1.5),
                      trace = "none", 
                      density.info = "none"
                      )
-#dev.off()
+dev.off()
+```
+
+```{r fig.height=6, fig.width=8, echo=FALSE}
+med.heat.spe <- med.toxins %>% 
+  select(Currentname, Country, Toxin, Med_border) %>% 
+  filter(Med_border == "yes") %>% 
+  group_by(Currentname,Toxin) %>% 
+  summarize(N = n_distinct("Currentname")) %>% 
+  spread(Toxin, N, fill = 0) %>% 
+  column_to_rownames("Currentname")
+med.heat.spe <- as.matrix(med.heat.spe) ## Μετατροπή του dataframe σε matrix
+#med.heat.spe
+
+
+##med.heat.scale.spe <- scale(med.heat.spe) 
+tiff("../Results/heatmap.test.tiff", res = 300, units = "in",  width=7, height=6)
+
+spe_dist <- vegdist(med.heat.spe, method = "euclidean" )
+spe_hclust <- hclust(spe_dist, method = "ward.D")
+plot(spe_hclust)
+
+tox_dist <- vegdist(t(med.heat.spe), method = "euclidean")
+tox_hclust <- hclust(tox_dist, method ="ward.D")
+plot(tox_hclust)
+
+map.spe <- heatmap.2(med.heat.spe,
+                     Rowv = as.dendrogram(spe_hclust),
+                     Colv = as.dendrogram(tox_hclust),
+                     dendrogram = "both",
+                     key = TRUE,
+                     #keysize = 1.5,
+                     cexRow = 0.64,
+                     cexCol = 0.8,
+                     margins = c(6,10),
+                     srtRow=0, srtCol=45, offsetRow=-0.5, offsetCol=-0.5,
+                     scale="none",
+                     #distfun = dist,
+                     sepcolor = "white",
+                     col = c("#66c2a5", "#fc8d62"),
+                     lwid = c(0.8,1),
+                     lhei=c(0.05, 0.2 ),
+                     labRow=as.expression(lapply(rownames(med.heat.spe), function(a) bquote(italic(.(a))))),
+                     sepwidth = c(1,1.5),
+                     trace = "none", 
+                     density.info = "none"
+                     )
+dev.off()
+```
+
+
+
+```{r fig.height=6, fig.width=7, results='hide'}
+med.heat.country <- med.toxins %>% 
+  select(Country, Toxin) %>% 
+  group_by(Country,Toxin) %>% 
+  summarize(N = n_distinct("Country")) %>% 
+  spread(Toxin, N, fill = 0) %>% 
+  column_to_rownames("Country")
+med.heat.country <- as.matrix(med.heat.country) ## Μετατροπή του dataframe σε matrix
+med.heat.country
+
+
+##med.heat.scale.spe <- scale(med.heat.spe) 
+png("../Results/heatmap.country.png", width=700, height=400)
+
+map.country <- heatmap.2(med.heat.country, 
+                     dendrogram = "both",
+                     key = TRUE,
+                     #keysize = 1.5,
+                     cexRow = 1,
+                     cexCol = 1,
+                     margins = c(6,4),
+                     srtRow=0, srtCol=45, offsetRow=-0.5, offsetCol=-0.5,
+                     scale="none",
+                     #distfun = dist,
+                     sepcolor = "black",
+                     col = c("#66c2a5", "#fc8d62"),
+                     lwid = c(0.8,1),
+                     lhei=c(0.05, 0.2 ),
+                     sepwidth = c(1,1.5),
+                     trace = "none", 
+                     density.info = "none"
+                     )
+dev.off()
 ```
 
 #Package heatmaply Country-Toxin
