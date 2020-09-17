@@ -1,0 +1,49 @@
+Type: Compendium
+Package: Medcyanolist
+Title: Medcyano
+Version: 0.0.1
+Authors@R: 
+    person(given = "Victoria",
+           family = "Giourieva",
+           role = "aut",
+           email = "vgiouriev@bio.auth.gr")
+Description: Mediterranean Cyanobacteria List
+License: 
+Depends: 
+    ape,
+    bdvis,
+    betapart,
+    cluster,
+    d3Tree,
+    datasets,
+    DBI,
+    factoextra,
+    FactoMineR,
+    ggmap,
+    ggplot2,
+    ggThemeAssist,
+    gplots,
+    heatmaply,
+    Hmisc,
+    hrbrthemes,
+    knitr,
+    mapproj,
+    odbc,
+    otuSummary,
+    plotly,
+    RColorBrewer,
+    reshape2,
+    rlang,
+    rlist,
+    rmarkdown,
+    RODBC,
+    rsconnect,
+    RVenn,
+    splitstackshape,
+    stringr,
+    tidyverse,
+    treemap,
+    vegan,
+    viridis
+Encoding: UTF-8
+LazyData: true

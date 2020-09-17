@@ -10,23 +10,30 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
+```{r}
+install.packages("gplots")
+```
+
+
 ```{r include=FALSE}
 library(tidyverse)
 library(factoextra)
 library(FactoMineR)
 library(Hmisc)
+library(gplots)
 ```
 
 # Taxonomic diversity and taxonomic distinctness 
 
 ```{r}
-med <- read.csv("../Data/Med_cyano_list_20191024.csv", row.names = NULL)
+med <- read.csv("../Data/Medcyanolist_source_20200130.csv", row.names = NULL)
 med <- med %>% 
   filter(Med_border == "yes")
 colnames(med)[1] <- "A/A"
 med <- med %>% 
   mutate(continent = case_when(Country %in% c("Greece", "Italy", "Spain", "France", "Albania", "Montenegro", "Slovenia", "Portugal", "Bulgaria", "Croatia") ~ "Europe",
                                Country %in% c("Egypt", "Morocco", "Tunisia", "Libya", "Algeria", "Israel","Lebanon") ~ "Africa",Country == "Turkey" ~ "Asia"))
+med
 ```
 
 
@@ -39,16 +46,14 @@ med[complete.cases(med), ]
 
 ```
 
-
 # Habitat
-
 
 ```{r}
 med.habi <- med %>% 
-  select( Order, Currentname, Habitat) %>% 
+  select(Order, Currentname, Habitat_source) %>% 
   filter(Order != "") %>% 
-  group_by(Order, Currentname, Habitat) %>% 
-  summarize(N = n()) %>% spread(Habitat, N, fill = 0, convert = FALSE, sep = NULL) %>%
+  group_by(Order, Currentname, Habitat_source) %>% 
+  summarize(N = n()) %>% spread(Habitat_source, N, fill = 0, convert = FALSE, sep = NULL) %>%
   column_to_rownames("Currentname")
 
 med.habi[med.habi >= 2] <- 1
