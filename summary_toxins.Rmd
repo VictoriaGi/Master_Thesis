@@ -1,0 +1,40 @@
+---
+title: "summary_toxins"
+author: "Vica"
+date: "2/25/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse)
+```
+
+
+
+```{r}
+med.toxins <- read.csv("../Data/Mediterranean_Cyanobacteria_toxins.csv")
+colnames(med.toxins)[1] <- "A/A"
+med.tox <- med.toxins %>% 
+  filter(Med_border == "yes")
+med.tox
+```
+
+
+```{r}
+str(med.tox)
+unique(med.tox$Currentname)
+```
+
+
+```{r}
+med.tox.hab <- med.tox %>% 
+  select(Habitat,Currentname) %>% 
+  group_by(Habitat) %>% 
+  summarize(N = n_distinct("Currentname"))
+med.tox.hab
+```

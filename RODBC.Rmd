@@ -1,0 +1,80 @@
+---
+title: "ODBC"
+author: "Vica"
+date: "3/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(RODBC)
+library(DBI)
+library(tidyverse)
+library(odbc)
+
+```
+
+```{r}
+con <- odbcConnect(dsn = "medcyano17")
+```
+
+
+```{r}
+conn <- odbcDriverConnect(
+'driver={SQL Server},server=DESKTOP-C98OFR4,database=medcyano,trusted_connection=true'
+)
+```
+
+
+```{r}
+sqlTables(con,
+          tableType = "TABLE")
+```
+```{r}
+sqlColumns(
+    con,
+    "medcyano"
+    )
+```
+```{r}
+sqlQuery(
+    con, 
+    "select * from medcyano;"
+    )
+```
+```{r}
+read_sql <- function(path){
+
+# Check that the file actually exists
+
+ stopifnot(file.exists(path))
+
+# Read all the characters from the given file 
+ 
+ sql <- readChar(path, nchar = file.info(path)$size)
+ 
+# Print the sql query
+ 
+ sql
+}
+```
+
+
+```{r}
+sqlQuery(con, read_sql("sql_query.sql"))
+```
+```{r}
+RShowDoc("RODBC", package="RODBC")
+```
+
+
+```{r}
+sqlFetch(con, "medcyano", max = 20, rows_at_time = 10)
+```
+```{r}
+sqlFetchMore(con)
+```
+

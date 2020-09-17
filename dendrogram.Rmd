@@ -1,0 +1,57 @@
+---
+title: "dendrogram"
+author: "Vica"
+date: "2/23/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(vegan)
+```
+
+
+```{r}
+med.toxins <- read.csv("../Data/Mediterranean_Cyanobacteria_toxins.csv")
+colnames(med.toxins)[1] <- "A/A"
+med.toxins
+```
+
+
+```{r}
+med.heat <- med.toxins %>% 
+  select(Currentname, Toxin) %>% 
+  group_by(Currentname, Toxin) %>% 
+  summarize(N = n_distinct("Currentname")) %>%  spread(Toxin, N, fill = 0) %>% column_to_rownames("Currentname")
+med.heat <- as.matrix(med.heat)
+med.heat
+```
+
+```{r fig.width=8, fig.height=6}
+spe_dist_r <- dist(med.heat, method="euclidean")
+spe_hclust_r <- hclust(spe_dist_r^2, method = "ward.D2")
+plot(spe_hclust_r)
+```
+
+
+```{r}
+spe_dist <- vegdist(med.heat, method = "euclidean" )
+```
+
+```{r fig.height=7, fig.width=9}
+spe_hclust <- hclust(spe_dist, method = "ward.D")
+plot(spe_hclust)
+```
+
+```{r}
+
+tox_dist <- vegdist(t(med.heat), method = "euclidean")
+tox_hclust <- hclust(tox_dist, method ="ward.D")
+plot(tox_hclust)
+```
+
+
